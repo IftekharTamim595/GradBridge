@@ -2,8 +2,9 @@
 Authentication views.
 """
 from rest_framework import status, generics
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
@@ -13,7 +14,9 @@ from .models import User
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([ScopedRateThrottle])
 def register(request):
+    request.throttle_scope = 'burst'
     """
     Register a new user.
     """
@@ -33,7 +36,9 @@ def register(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([ScopedRateThrottle])
 def login(request):
+    request.throttle_scope = 'burst'
     """
     Login and get JWT tokens.
     """
@@ -59,14 +64,22 @@ def login(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def me(request):
     """
-    Get current user details.
+    Get or update current user details.
     """
-    serializer = UserSerializer(request.user)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    if request.method == 'GET':
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    if request.method == 'PATCH':
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserListView(generics.ListAPIView):

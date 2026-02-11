@@ -1,29 +1,32 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import axios from 'axios'
+import apiClient from '../api/apiClient'
 import { useAuth } from '../contexts/AuthContext'
-import { 
-  User, Briefcase, Award, TrendingUp, 
-  Plus, ArrowRight, FileText, MessageCircle 
+import {
+  User, Briefcase, Award, TrendingUp,
+  Plus, ArrowRight, FileText, MessageCircle
 } from 'lucide-react'
 import Footer from '../components/Footer'
 
 const StudentDashboard = () => {
-  const { user } = useAuth()
+  const { user, loading: authLoading, isAuthenticated } = useAuth()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchProfile()
-  }, [])
+    // Wait for auth state to be ready before fetching
+    if (!authLoading && isAuthenticated) {
+      fetchProfile()
+    } else if (!authLoading && !isAuthenticated) {
+      setLoading(false)
+    }
+  }, [authLoading, isAuthenticated])
 
   const fetchProfile = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/profiles/students/')
-      if (response.data.results && response.data.results.length > 0) {
-        setProfile(response.data.results[0])
-      }
+      const response = await apiClient.get('/profiles/students/me/')
+      setProfile(response.data)
     } catch (error) {
       console.error('Error fetching profile:', error)
     } finally {
@@ -90,15 +93,14 @@ const StudentDashboard = () => {
                   className="card cursor-pointer group"
                 >
                   <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                      stat.color === 'indigo' ? 'bg-indigo-600/20' :
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${stat.color === 'indigo' ? 'bg-indigo-600/20' :
                       stat.color === 'emerald' ? 'bg-emerald-600/20' :
-                      'bg-blue-600/20'
-                    }`}>
+                        'bg-blue-600/20'
+                      }`}>
                       <stat.icon className={
                         stat.color === 'indigo' ? 'text-indigo-400' :
-                        stat.color === 'emerald' ? 'text-emerald-400' :
-                        'text-blue-400'
+                          stat.color === 'emerald' ? 'text-emerald-400' :
+                            'text-blue-400'
                       } size={24} />
                     </div>
                     <ArrowRight className="text-slate-400 group-hover:text-white group-hover:translate-x-1 transition-all" size={20} />
@@ -111,11 +113,10 @@ const StudentDashboard = () => {
                         initial={{ width: 0 }}
                         animate={{ width: `${stat.value}%` }}
                         transition={{ duration: 1, delay: 0.5 }}
-                        className={`h-full ${
-                          stat.color === 'indigo' ? 'bg-gradient-to-r from-indigo-500 to-indigo-600' :
+                        className={`h-full ${stat.color === 'indigo' ? 'bg-gradient-to-r from-indigo-500 to-indigo-600' :
                           stat.color === 'emerald' ? 'bg-gradient-to-r from-emerald-500 to-emerald-600' :
-                          'bg-gradient-to-r from-blue-500 to-blue-600'
-                        }`}
+                            'bg-gradient-to-r from-blue-500 to-blue-600'
+                          }`}
                       />
                     </div>
                   )}

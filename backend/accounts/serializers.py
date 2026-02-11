@@ -4,6 +4,7 @@ Serializers for authentication and user management.
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from .models import User
+from utils.validators import validate_image
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -42,8 +43,13 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'email', 'username', 'role', 'first_name', 'last_name', 
-                  'is_verified', 'created_at', 'updated_at')
+                  'is_verified', 'created_at', 'updated_at', 'profile_photo')
         read_only_fields = ('id', 'is_verified', 'created_at', 'updated_at')
+
+    def validate_profile_photo(self, value):
+        if value:
+            validate_image(value)
+        return value
 
 
 class LoginSerializer(serializers.Serializer):

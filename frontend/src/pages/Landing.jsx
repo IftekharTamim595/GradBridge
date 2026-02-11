@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
-import { 
-  Users, GraduationCap, FileText, TrendingUp, 
-  Search, MessageCircle, BarChart3, Sparkles 
+import {
+  Users, GraduationCap, FileText, TrendingUp,
+  Search, MessageCircle, BarChart3, Sparkles
 } from 'lucide-react'
 import Footer from '../components/Footer'
 
@@ -100,7 +100,7 @@ const Landing = () => {
               transition={{ delay: 0.4, duration: 0.6 }}
               className="text-xl md:text-2xl text-slate-300 mb-12 max-w-3xl mx-auto leading-relaxed"
             >
-              A professional platform connecting university students with alumni 
+              A professional platform connecting university students with alumni
               for mentorship, career development, and collaborative growth.
             </motion.p>
 
@@ -133,12 +133,16 @@ const Landing = () => {
                   </Link>
                 </>
               )}
-              <Link
-                to="/alumni/search"
-                className="text-slate-300 hover:text-white text-lg font-medium transition-colors"
+              <a
+                href="#features"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="text-slate-300 hover:text-white text-lg font-medium transition-colors cursor-pointer"
               >
                 Explore Platform →
-              </Link>
+              </a>
             </motion.div>
           </motion.div>
         </div>
@@ -190,7 +194,7 @@ const Landing = () => {
               Why GradBridge?
             </h2>
             <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-              We bridge the gap between academic learning and professional success by 
+              We bridge the gap between academic learning and professional success by
               connecting students with experienced alumni who can guide their career journey.
             </p>
           </motion.div>
@@ -233,7 +237,7 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-800/30">
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-800/30">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}

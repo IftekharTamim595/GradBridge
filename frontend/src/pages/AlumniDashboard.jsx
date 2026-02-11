@@ -1,31 +1,36 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import axios from 'axios'
+import apiClient from '../api/apiClient'
 import { useAuth } from '../contexts/AuthContext'
-import { 
-  Users, TrendingUp, Award, Search, 
-  ArrowRight, BarChart3, MessageCircle 
+import {
+  Users, TrendingUp, Award, Search,
+  ArrowRight, BarChart3, MessageCircle
 } from 'lucide-react'
 import Footer from '../components/Footer'
 
 const AlumniDashboard = () => {
-  const { user } = useAuth()
+  const { user, loading: authLoading, isAuthenticated } = useAuth()
   const [profile, setProfile] = useState(null)
   const [analytics, setAnalytics] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    // Wait for auth state to be ready before fetching
+    if (!authLoading && isAuthenticated) {
+      fetchData()
+    } else if (!authLoading && !isAuthenticated) {
+      setLoading(false)
+    }
+  }, [authLoading, isAuthenticated])
 
   const fetchData = async () => {
     try {
       const [profileRes, analyticsRes] = await Promise.all([
-        axios.get('http://localhost:8000/api/profiles/alumni/'),
-        axios.get('http://localhost:8000/api/analytics/alumni/'),
+        apiClient.get('/profiles/alumni/'),
+        apiClient.get('/analytics/alumni/'),
       ])
-      
+
       if (profileRes.data.results && profileRes.data.results.length > 0) {
         setProfile(profileRes.data.results[0])
       }
@@ -90,15 +95,14 @@ const AlumniDashboard = () => {
               whileHover={{ y: -5 }}
               className="card"
             >
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${
-                stat.color === 'indigo' ? 'bg-indigo-600/20' :
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${stat.color === 'indigo' ? 'bg-indigo-600/20' :
                 stat.color === 'emerald' ? 'bg-emerald-600/20' :
-                'bg-blue-600/20'
-              }`}>
+                  'bg-blue-600/20'
+                }`}>
                 <stat.icon className={
                   stat.color === 'indigo' ? 'text-indigo-400' :
-                  stat.color === 'emerald' ? 'text-emerald-400' :
-                  'text-blue-400'
+                    stat.color === 'emerald' ? 'text-emerald-400' :
+                      'text-blue-400'
                 } size={24} />
               </div>
               <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>

@@ -53,8 +53,9 @@ class MentorshipRequestViewSet(viewsets.ModelViewSet):
         return context
     
     def perform_create(self, serializer):
+        from rest_framework.exceptions import PermissionDenied
         if not self.request.user.is_student:
-            raise PermissionError("Only students can create mentorship requests")
+            raise PermissionDenied("Only students can create mentorship requests")
         serializer.save()
     
     @action(detail=True, methods=['post'])
@@ -67,6 +68,13 @@ class MentorshipRequestViewSet(viewsets.ModelViewSet):
         if not request.user.is_alumni:
             return Response(
                 {'error': 'Only alumni can accept mentorship requests'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        # Verify ownership (IDOR Fix)
+        if mentorship.alumni_profile.user != request.user:
+             return Response(
+                {'error': 'You do not have permission to accept this request'},
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -97,6 +105,13 @@ class MentorshipRequestViewSet(viewsets.ModelViewSet):
         if not request.user.is_alumni:
             return Response(
                 {'error': 'Only alumni can reject mentorship requests'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Verify ownership (IDOR Fix)
+        if mentorship.alumni_profile.user != request.user:
+             return Response(
+                {'error': 'You do not have permission to reject this request'},
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -169,6 +184,13 @@ class ReferralRequestViewSet(viewsets.ModelViewSet):
                 {'error': 'Only alumni can accept referral requests'},
                 status=status.HTTP_403_FORBIDDEN
             )
+
+        # Verify ownership (IDOR Fix)
+        if referral.alumni_profile.user != request.user:
+             return Response(
+                {'error': 'You do not have permission to accept this referral'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         
         if referral.status != 'pending':
             return Response(
@@ -207,6 +229,13 @@ class ReferralRequestViewSet(viewsets.ModelViewSet):
         if not request.user.is_alumni:
             return Response(
                 {'error': 'Only alumni can reject referral requests'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Verify ownership (IDOR Fix)
+        if referral.alumni_profile.user != request.user:
+             return Response(
+                {'error': 'You do not have permission to reject this referral'},
                 status=status.HTTP_403_FORBIDDEN
             )
         

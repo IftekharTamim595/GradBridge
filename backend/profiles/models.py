@@ -60,6 +60,22 @@ class StudentProfile(models.Model):
     github_url = models.URLField(blank=True)
     portfolio_url = models.URLField(blank=True)
     
+    # Profile visibility
+    VISIBILITY_CHOICES = [
+        ('public', 'Public'),
+        ('private', 'Private'),
+    ]
+    visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES, default='public')
+    
+    # Location
+    city = models.CharField(max_length=100, blank=True)
+    country = models.CharField(max_length=100, blank=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    
+    # Hiring availability
+    available_for_hire = models.BooleanField(default=False)
+    
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -70,6 +86,9 @@ class StudentProfile(models.Model):
             models.Index(fields=['batch']),
             models.Index(fields=['graduation_year']),
             models.Index(fields=['profile_strength']),
+            models.Index(fields=['visibility']),
+            models.Index(fields=['available_for_hire']),
+            models.Index(fields=['city', 'country']),
         ]
     
     def __str__(self):
@@ -145,6 +164,19 @@ class AlumniProfile(models.Model):
     linkedin_url = models.URLField(blank=True)
     bio = models.TextField(blank=True)
     
+    # Profile visibility
+    VISIBILITY_CHOICES = [
+        ('public', 'Public'),
+        ('private', 'Private'),
+    ]
+    visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES, default='public')
+    
+    # Location
+    city = models.CharField(max_length=100, blank=True)
+    country = models.CharField(max_length=100, blank=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    
     # Analytics (calculated fields)
     students_mentored_count = models.IntegerField(default=0)
     referrals_made_count = models.IntegerField(default=0)
@@ -186,3 +218,25 @@ class SkillGap(models.Model):
     
     def __str__(self):
         return f"{self.student_profile.user.email} - {self.skill.name}"
+
+
+class Certificate(models.Model):
+    """
+    Student certifications.
+    """
+    student_profile = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='certificates')
+    name = models.CharField(max_length=200)
+    issuing_organization = models.CharField(max_length=200)
+    issue_date = models.DateField()
+    expiration_date = models.DateField(null=True, blank=True)
+    credential_id = models.CharField(max_length=100, blank=True)
+    credential_url = models.URLField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'certificates'
+        ordering = ['-issue_date']
+        
+    def __str__(self):
+        return f"{self.student_profile.user.email} - {self.name}"

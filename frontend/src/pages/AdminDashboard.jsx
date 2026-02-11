@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import axios from 'axios'
+import apiClient from '../api/apiClient'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Users, GraduationCap, MessageCircle, TrendingUp, BarChart3 } from 'lucide-react'
 import Footer from '../components/Footer'
@@ -18,9 +18,9 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     try {
       const [statsRes, trendsRes, engagementRes] = await Promise.all([
-        axios.get('http://localhost:8000/api/analytics/dashboard/'),
-        axios.get('http://localhost:8000/api/analytics/skill-trends/'),
-        axios.get('http://localhost:8000/api/analytics/engagement/'),
+        apiClient.get('/analytics/dashboard/'),
+        apiClient.get('/analytics/skill-trends/'),
+        apiClient.get('/analytics/engagement/'),
       ])
       
       setStats(statsRes.data)

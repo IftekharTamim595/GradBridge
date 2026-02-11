@@ -4,19 +4,22 @@ Views for profile management.
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
-from .models import StudentProfile, AlumniProfile, Skill, SkillGap
+from django.db.models import Q
+from .models import StudentProfile, AlumniProfile, Skill, SkillGap, Certificate
 from .serializers import (
     StudentProfileSerializer, AlumniProfileSerializer,
-    SkillSerializer, SkillGapSerializer
+    SkillSerializer, SkillGapSerializer, CertificateSerializer
 )
 from accounts.permissions import IsStudent, IsAlumni
+from .permissions import IsOwnerOrReadOnly
 
 
-class SkillViewSet(viewsets.ReadOnlyModelViewSet):
+
+class SkillViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for Skills (read-only for all authenticated users).
+    ViewSet for Skills (read/write for all authenticated users).
     """
     queryset = Skill.objects.all()
     serializer_class = SkillSerializer
@@ -24,27 +27,95 @@ class SkillViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ['name', 'category']
     ordering_fields = ['name', 'created_at']
 
+    def perform_create(self, serializer):
+        # Ensure skill name is title cased and unique check is handled by model/db usually
+        # But we can force title case here for consistency
+        name = self.request.data.get('name', '').strip()
+        if name:
+             serializer.save(name=name)
+        else:
+             serializer.save()
+
+
+class CertificateViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Certificates.
+    """
+    serializer_class = CertificateSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+
+    def get_queryset(self):
+        # Users can only see their own certificates? Or public ones?
+        # For management, mostly own.
+        return Certificate.objects.filter(student_profile__user=self.request.user)
+
+    def perform_create(self, serializer):
+        # Automatically associate with the student profile
+        profile = get_object_or_404(StudentProfile, user=self.request.user)
+        serializer.save(student_profile=profile)
+
 
 class StudentProfileViewSet(viewsets.ModelViewSet):
     """
     ViewSet for StudentProfile.
     """
     serializer_class = StudentProfileSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+
+    @action(detail=False, methods=['get', 'patch', 'put'])
+    def me(self, request):
+        """
+        Get or update the current user's profile.
+        """
+        profile, created = StudentProfile.objects.get_or_create(user=request.user)
+        if request.method == 'GET':
+            serializer = self.get_serializer(profile)
+            return Response(serializer.data)
+        
+        serializer = self.get_serializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     
     def get_queryset(self):
         user = self.request.user
+        queryset = StudentProfile.objects.all()
+        
         if user.is_student:
-            # Students can only see/edit their own profile
-            return StudentProfile.objects.filter(user=user)
+            # Students can see their own profile and public profiles
+            return queryset.filter(
+                Q(user=user) | Q(visibility='public')
+            )
         elif user.is_alumni or user.is_admin:
-            # Alumni and admins can see all student profiles
-            return StudentProfile.objects.all()
-        return StudentProfile.objects.none()
+            # Alumni and admins can see all profiles
+            return queryset
+        elif user.is_authenticated:
+            # External users can only see public profiles
+            return queryset.filter(visibility='public')
+        else:
+            # Unauthenticated users can only see public profiles
+            return queryset.filter(visibility='public')
     
     def get_object(self):
         queryset = self.get_queryset()
         obj = get_object_or_404(queryset, pk=self.kwargs['pk'])
+        
+        # Check visibility permissions
+        user = self.request.user
+        if obj.visibility == 'private':
+            if not user.is_authenticated:
+                return Response(
+                    {'detail': 'This profile is private.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            if not (obj.user == user or user.is_admin):
+                return Response(
+                    {'detail': 'You do not have permission to view this profile.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        
         self.check_object_permissions(self.request, obj)
         return obj
     
@@ -73,6 +144,88 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
         profile = self.get_object()
         strength = profile.calculate_profile_strength()
         return Response({'profile_strength': strength})
+    
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        """
+        Search students with filters.
+        """
+        queryset = self.get_queryset()
+        
+        # Apply filters
+        skills = request.query_params.getlist('skills')
+        batch = request.query_params.get('batch')
+        city = request.query_params.get('city')
+        country = request.query_params.get('country')
+        available_for_hire = request.query_params.get('available_for_hire')
+        search = request.query_params.get('search')
+        
+        if skills:
+            queryset = queryset.filter(skills__id__in=skills).distinct()
+        if batch:
+            queryset = queryset.filter(batch=batch)
+        if city:
+            queryset = queryset.filter(city__icontains=city)
+        if country:
+            queryset = queryset.filter(country__icontains=country)
+        if available_for_hire == 'true':
+            queryset = queryset.filter(available_for_hire=True)
+        if search:
+            queryset = queryset.filter(
+                Q(user__email__icontains=search) |
+                Q(user__first_name__icontains=search) |
+                Q(user__last_name__icontains=search) |
+                Q(university__icontains=search) |
+                Q(degree__icontains=search) |
+                Q(bio__icontains=search)
+            )
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def available_for_hire(self, request):
+        """
+        Get students available for hire.
+        """
+        queryset = self.get_queryset().filter(available_for_hire=True)
+        
+        # Location-based filtering
+        user_lat = request.query_params.get('latitude')
+        user_lng = request.query_params.get('longitude')
+        radius_km = request.query_params.get('radius', 50)  # Default 50km
+        
+        if user_lat and user_lng:
+            # Simple distance calculation (can be improved with PostGIS)
+            from math import radians, cos, sin, asin, sqrt
+            try:
+                user_lat = float(user_lat)
+                user_lng = float(user_lng)
+                radius_km = float(radius_km)
+                
+                # Filter by approximate distance
+                # This is a simplified version - for production, use PostGIS
+                nearby_profiles = []
+                for profile in queryset:
+                    if profile.latitude and profile.longitude:
+                        lat1, lon1 = radians(user_lat), radians(user_lng)
+                        lat2, lon2 = radians(float(profile.latitude)), radians(float(profile.longitude))
+                        dlat = lat2 - lat1
+                        dlon = lon2 - lon1
+                        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+                        c = 2 * asin(sqrt(a))
+                        distance = 6371 * c  # Earth radius in km
+                        
+                        if distance <= radius_km:
+                            profile.distance_km = round(distance, 2)
+                            nearby_profiles.append(profile)
+                
+                queryset = type(queryset)(nearby_profiles)
+            except (ValueError, TypeError):
+                pass
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class AlumniProfileViewSet(viewsets.ModelViewSet):
@@ -80,17 +233,61 @@ class AlumniProfileViewSet(viewsets.ModelViewSet):
     ViewSet for AlumniProfile.
     """
     serializer_class = AlumniProfileSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+
+    @action(detail=False, methods=['get', 'patch', 'put'])
+    def me(self, request):
+        """
+        Get or update the current user's profile.
+        """
+        profile, created = AlumniProfile.objects.get_or_create(user=request.user)
+        if request.method == 'GET':
+            serializer = self.get_serializer(profile)
+            return Response(serializer.data)
+        
+        serializer = self.get_serializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     
     def get_queryset(self):
         user = self.request.user
+        queryset = AlumniProfile.objects.all()
+        
         if user.is_alumni:
-            # Alumni can see/edit their own profile and view all alumni profiles
-            return AlumniProfile.objects.all()
-        elif user.is_student or user.is_admin:
-            # Students and admins can see all alumni profiles
-            return AlumniProfile.objects.all()
-        return AlumniProfile.objects.none()
+            # Alumni can see all other alumni? Or just public ones? 
+            # Usually they can explore logic. Let's assume public.
+            # But wait, user requirement: "Only show profiles where is_public is true"
+            # It implies generic search.
+            if self.action in ['me', 'update', 'partial_update', 'destroy']:
+                 return queryset
+            return queryset.filter(Q(user=user) | Q(visibility='public'))
+            
+        elif user.is_student or user.is_authenticated:
+            # Students and others can only see public profiles
+            return queryset.filter(visibility='public')
+            
+        return queryset.filter(visibility='public') # Fallback
+    
+    def get_object(self):
+        queryset = AlumniProfile.objects.all() # Bypass filtering to handle manually
+        obj = get_object_or_404(queryset, pk=self.kwargs['pk'])
+        
+        # Check visibility permissions
+        user = self.request.user
+        if obj.visibility == 'private':
+            if not user.is_authenticated:
+                 return Response({'detail': 'Private profile.'}, status=status.HTTP_403_FORBIDDEN)
+            if not (obj.user == user or user.is_admin):
+                return Response(
+                    {'detail': 'You do not have permission to view this profile.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        
+        self.check_object_permissions(self.request, obj)
+        return obj
     
     def perform_create(self, serializer):
         # Only alumni can create their own profile
@@ -114,5 +311,46 @@ class AlumniProfileViewSet(viewsets.ModelViewSet):
         Get alumni available for referrals.
         """
         queryset = AlumniProfile.objects.filter(available_for_referrals=True)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        """
+        Search alumni with filters.
+        """
+        queryset = self.get_queryset()
+        
+        # Apply filters
+        skills = request.query_params.getlist('skills')
+        industry = request.query_params.get('industry')
+        experience_min = request.query_params.get('experience_min')
+        city = request.query_params.get('city')
+        country = request.query_params.get('country')
+        search = request.query_params.get('search')
+        
+        if skills:
+            queryset = queryset.filter(skills__id__in=skills).distinct()
+        if industry:
+            queryset = queryset.filter(industry__icontains=industry)
+        if experience_min:
+            try:
+                queryset = queryset.filter(years_of_experience__gte=int(experience_min))
+            except ValueError:
+                pass
+        if city:
+            queryset = queryset.filter(city__icontains=city)
+        if country:
+            queryset = queryset.filter(country__icontains=country)
+        if search:
+            queryset = queryset.filter(
+                Q(user__email__icontains=search) |
+                Q(user__first_name__icontains=search) |
+                Q(user__last_name__icontains=search) |
+                Q(current_company__icontains=search) |
+                Q(current_position__icontains=search) |
+                Q(bio__icontains=search)
+            )
+        
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)

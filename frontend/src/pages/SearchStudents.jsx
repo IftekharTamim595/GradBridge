@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import axios from 'axios'
-import { Search, User, GraduationCap, Award, TrendingUp, FileText, Loader } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import apiClient from '../api/apiClient'
+import { Search, User, GraduationCap, Award, TrendingUp, FileText, Loader, MessageCircle } from 'lucide-react'
 import Footer from '../components/Footer'
+import { useModal } from '../contexts/ModalContext'
 
 const SearchStudents = () => {
   const [students, setStudents] = useState([])
@@ -16,6 +18,7 @@ const SearchStudents = () => {
   const [summary, setSummary] = useState(null)
   const [loadingSummary, setLoadingSummary] = useState(false)
   const [loading, setLoading] = useState(true)
+  const { showModal } = useModal()
 
   useEffect(() => {
     fetchData()
@@ -27,11 +30,12 @@ const SearchStudents = () => {
 
   const fetchData = async () => {
     try {
-      const skillsRes = await axios.get('http://localhost:8000/api/profiles/skills/')
+      const skillsRes = await apiClient.get('/profiles/skills/')
       setSkills(skillsRes.data.results || [])
       await searchStudents()
     } catch (error) {
       console.error('Error fetching data:', error)
+      showModal({ type: 'error', message: 'Failed to load skills data' })
     } finally {
       setLoading(false)
     }
@@ -42,19 +46,29 @@ const SearchStudents = () => {
       const params = new URLSearchParams()
       if (filters.search) params.append('search', filters.search)
       if (filters.batch) params.append('batch', filters.batch)
-      
-      const response = await axios.get(`http://localhost:8000/api/profiles/students/?${params}`)
-      let results = response.data.results || []
-      
-      if (filters.skill) {
-        results = results.filter(s => 
-          s.skills?.some(skill => skill.id.toString() === filters.skill)
-        )
+      if (filters.skill) params.append('skills', filters.skill)
+
+      // Try search endpoint first
+      try {
+        const response = await apiClient.get(`/profiles/students/search/?${params}`)
+        setStudents(response.data || [])
+      } catch (searchError) {
+        // Fallback to regular endpoint
+        const response = await apiClient.get(`/profiles/students/?${params}`)
+        let results = response.data.results || []
+
+        // Filter by skill on client side if needed
+        if (filters.skill) {
+          results = results.filter(s =>
+            s.skills?.some(skill => skill.id.toString() === filters.skill)
+          )
+        }
+
+        setStudents(results)
       }
-      
-      setStudents(results)
     } catch (error) {
       console.error('Error searching students:', error)
+      showModal({ type: 'error', message: 'Failed to search students. Please try again.' })
     }
   }
 
@@ -62,7 +76,7 @@ const SearchStudents = () => {
     setLoadingSummary(true)
     setSummary(null)
     try {
-      const response = await axios.post('http://localhost:8000/api/ml/student-summary/', {
+      const response = await apiClient.post('/ml/student-summary/', {
         student_profile_id: studentId,
       })
       setSummary(response.data)
@@ -154,54 +168,70 @@ const SearchStudents = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ y: -2 }}
-                  onClick={() => {
-                    setSelectedStudent(student)
-                    fetchStudentSummary(student.id)
-                  }}
-                  className={`card cursor-pointer transition-all ${
-                    selectedStudent?.id === student.id
+                  className={`card cursor-pointer transition-all relative ${selectedStudent?.id === student.id
                       ? 'border-indigo-500 bg-slate-800'
                       : 'hover:border-indigo-500/50'
-                  }`}
+                    }`}
                 >
-                  <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-indigo-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <User className="text-indigo-400" size={24} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-white mb-1">
-                        {student.user?.email}
-                      </h3>
-                      <p className="text-slate-400 text-sm mb-2">
-                        {student.degree} at {student.university}
-                      </p>
-                      <div className="flex items-center space-x-4 text-xs text-slate-500 mb-3">
-                        <span className="flex items-center space-x-1">
-                          <GraduationCap size={14} />
-                          <span>Batch: {student.batch || 'N/A'}</span>
-                        </span>
-                        <span className="flex items-center space-x-1">
-                          <TrendingUp size={14} />
-                          <span>Strength: {student.profile_strength}%</span>
-                        </span>
+                  <div
+                    onClick={() => {
+                      setSelectedStudent(student)
+                      fetchStudentSummary(student.id)
+                    }}
+                  >
+                    <div className="flex items-start space-x-4">
+                      <div className="w-12 h-12 bg-indigo-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <User className="text-indigo-400" size={24} />
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {student.skills?.slice(0, 5).map((skill) => (
-                          <span
-                            key={skill.id}
-                            className="px-2 py-1 bg-indigo-600/20 text-indigo-300 text-xs rounded border border-indigo-500/30"
-                          >
-                            {skill.name}
+                      <div className="flex-1">
+                        <Link
+                          to={`/students/${student.id}`}
+                          className="block"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <h3 className="text-lg font-semibold text-white mb-1 hover:text-indigo-400 transition-colors">
+                            {student.user?.email}
+                          </h3>
+                        </Link>
+                        <p className="text-slate-400 text-sm mb-2">
+                          {student.degree} at {student.university}
+                        </p>
+                        <div className="flex items-center space-x-4 text-xs text-slate-500 mb-3">
+                          <span className="flex items-center space-x-1">
+                            <GraduationCap size={14} />
+                            <span>Batch: {student.batch || 'N/A'}</span>
                           </span>
-                        ))}
-                        {student.skills?.length > 5 && (
-                          <span className="px-2 py-1 bg-slate-700 text-slate-400 text-xs rounded">
-                            +{student.skills.length - 5} more
+                          <span className="flex items-center space-x-1">
+                            <TrendingUp size={14} />
+                            <span>Strength: {student.profile_strength}%</span>
                           </span>
-                        )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {student.skills?.slice(0, 5).map((skill) => (
+                            <span
+                              key={skill.id}
+                              className="px-2 py-1 bg-indigo-600/20 text-indigo-300 text-xs rounded border border-indigo-500/30"
+                            >
+                              {skill.name}
+                            </span>
+                          ))}
+                          {student.skills?.length > 5 && (
+                            <span className="px-2 py-1 bg-slate-700 text-slate-400 text-xs rounded">
+                              +{student.skills.length - 5} more
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <Link
+                    to={`/students/${student.id}`}
+                    className="absolute inset-0 z-10"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedStudent(student)
+                    }}
+                  />
                 </motion.div>
               ))}
               {students.length === 0 && (

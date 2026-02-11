@@ -2,8 +2,9 @@
 Serializers for profile models.
 """
 from rest_framework import serializers
-from .models import StudentProfile, AlumniProfile, Skill, SkillGap
+from .models import StudentProfile, AlumniProfile, Skill, SkillGap, Certificate
 from accounts.serializers import UserSerializer
+from utils.validators import validate_resume
 
 
 class SkillSerializer(serializers.ModelSerializer):
@@ -16,12 +17,23 @@ class SkillSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created_at')
 
 
+class CertificateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Certificate model.
+    """
+    class Meta:
+        model = Certificate
+        fields = ('id', 'student_profile', 'name', 'issuing_organization', 'issue_date', 'expiration_date', 'credential_id', 'credential_url', 'created_at')
+        read_only_fields = ('id', 'created_at', 'student_profile')
+
+
 class StudentProfileSerializer(serializers.ModelSerializer):
     """
     Serializer for StudentProfile.
     """
     user = UserSerializer(read_only=True)
     skills = SkillSerializer(many=True, read_only=True)
+    certificates = CertificateSerializer(many=True, read_only=True)
     skill_ids = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Skill.objects.all(),
@@ -34,8 +46,10 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         model = StudentProfile
         fields = (
             'id', 'user', 'university', 'degree', 'batch', 'gpa', 'graduation_year',
-            'skills', 'skill_ids', 'resume', 'profile_strength', 'profile_completion_percentage',
-            'bio', 'linkedin_url', 'github_url', 'portfolio_url', 'created_at', 'updated_at'
+            'skills', 'skill_ids', 'certificates', 'resume', 'profile_strength', 'profile_completion_percentage',
+            'bio', 'linkedin_url', 'github_url', 'portfolio_url', 'visibility',
+            'city', 'country', 'latitude', 'longitude', 'available_for_hire',
+            'created_at', 'updated_at'
         )
         read_only_fields = ('id', 'profile_strength', 'profile_completion_percentage', 'created_at', 'updated_at')
     
@@ -51,6 +65,11 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         instance.calculate_profile_strength()
         
         return instance
+
+    def validate_resume(self, value):
+        if value:
+            validate_resume(value)
+        return value
 
 
 class AlumniProfileSerializer(serializers.ModelSerializer):
@@ -74,7 +93,9 @@ class AlumniProfileSerializer(serializers.ModelSerializer):
             'years_of_experience', 'university', 'degree', 'graduation_year', 'batch',
             'skills', 'skill_ids', 'expertise_areas', 'available_for_mentorship',
             'available_for_referrals', 'linkedin_url', 'bio', 'students_mentored_count',
-            'referrals_made_count', 'created_at', 'updated_at'
+            'referrals_made_count', 'city', 'country', 'latitude', 'longitude',
+            'visibility',
+            'created_at', 'updated_at'
         )
         read_only_fields = (
             'id', 'students_mentored_count', 'referrals_made_count',

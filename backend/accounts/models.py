@@ -12,12 +12,15 @@ class User(AbstractUser):
     ROLE_CHOICES = [
         ('student', 'Student'),
         ('alumni', 'Alumni'),
+        ('external', 'External User'),
         ('admin', 'Admin'),
     ]
     
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
     email = models.EmailField(unique=True)
+    profile_photo = models.ImageField(upload_to='profile_photos/', null=True, blank=True)
     is_verified = models.BooleanField(default=False)
+    is_approved = models.BooleanField(default=False)  # For recruiter approval
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -45,3 +48,7 @@ class User(AbstractUser):
     @property
     def is_admin(self):
         return self.role == 'admin'
+    
+    @property
+    def is_external(self):
+        return self.role == 'external'

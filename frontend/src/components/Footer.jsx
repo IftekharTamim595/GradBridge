@@ -16,7 +16,7 @@ const Footer = () => {
               <span className="text-xl font-bold text-white">GradBridge</span>
             </div>
             <p className="text-slate-400 text-sm max-w-md">
-              A professional platform connecting university students with alumni for mentorship, 
+              A professional platform connecting university students with alumni for mentorship,
               career development, and collaborative growth. Built for academic excellence.
             </p>
           </div>

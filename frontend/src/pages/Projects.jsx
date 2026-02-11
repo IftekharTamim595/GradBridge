@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import axios from 'axios'
+import apiClient from '../api/apiClient'
 import { Plus, Edit, Trash2, ExternalLink, Github, Globe, X, Save, AlertCircle, CheckCircle } from 'lucide-react'
 import Footer from '../components/Footer'
 
@@ -17,7 +17,7 @@ const Projects = () => {
 
   const fetchProjects = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/projects/')
+      const response = await apiClient.get('/projects/')
       setProjects(response.data.results || [])
     } catch (error) {
       console.error('Error fetching projects:', error)
@@ -42,16 +42,19 @@ const Projects = () => {
       tech_stack: formData.get('tech_stack'),
       github_link: formData.get('github_link'),
       live_link: formData.get('live_link'),
+
+      start_date: formData.get('start_date') || null,
+      end_date: formData.get('end_date') || null,
       is_active: formData.get('is_active') === 'on',
       is_public: formData.get('is_public') === 'on',
     }
 
     try {
       if (editingProject) {
-        await axios.patch(`http://localhost:8000/api/projects/${editingProject.id}/`, data)
+        await apiClient.patch(`/projects/${editingProject.id}/`, data)
         showMessage('success', 'Project updated successfully!')
       } else {
-        await axios.post('http://localhost:8000/api/projects/', data)
+        await apiClient.post('/projects/', data)
         showMessage('success', 'Project added successfully!')
       }
       await fetchProjects()
@@ -66,9 +69,9 @@ const Projects = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this project?')) return
-    
+
     try {
-      await axios.delete(`http://localhost:8000/api/projects/${id}/`)
+      await apiClient.delete(`/projects/${id}/`)
       showMessage('success', 'Project deleted successfully!')
       await fetchProjects()
     } catch (error) {
@@ -116,11 +119,10 @@ const Projects = () => {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${
-              message.type === 'success'
-                ? 'bg-emerald-500/10 border border-emerald-500/50 text-emerald-400'
-                : 'bg-red-500/10 border border-red-500/50 text-red-400'
-            }`}
+            className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${message.type === 'success'
+              ? 'bg-emerald-500/10 border border-emerald-500/50 text-emerald-400'
+              : 'bg-red-500/10 border border-red-500/50 text-red-400'
+              }`}
           >
             {message.type === 'success' ? (
               <CheckCircle size={20} />
@@ -203,6 +205,27 @@ const Projects = () => {
                     defaultValue={editingProject?.live_link || ''}
                     className="input-field"
                     placeholder="https://yourproject.com"
+                  />
+                </div>
+
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Start Date</label>
+                  <input
+                    type="date"
+                    name="start_date"
+                    defaultValue={editingProject?.start_date || ''}
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">End Date</label>
+                  <input
+                    type="date"
+                    name="end_date"
+                    defaultValue={editingProject?.end_date || ''}
+                    className="input-field"
                   />
                 </div>
               </div>
@@ -305,6 +328,10 @@ const Projects = () => {
                 {project.tech_stack && (
                   <p className="text-xs text-slate-500 mb-4">Tech: {project.tech_stack}</p>
                 )}
+                <div className="text-xs text-slate-500 mb-3 flex items-center space-x-2">
+                  {project.start_date && <span>Started: {project.start_date}</span>}
+                  {project.end_date && <span>• Completed: {project.end_date}</span>}
+                </div>
                 <div className="flex space-x-3 mb-4">
                   {project.github_link && (
                     <a
@@ -330,18 +357,16 @@ const Projects = () => {
                   )}
                 </div>
                 <div className="flex items-center space-x-2 pt-4 border-t border-slate-700">
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    project.is_active
-                      ? 'bg-emerald-500/20 text-emerald-400'
-                      : 'bg-slate-700 text-slate-400'
-                  }`}>
+                  <span className={`px-2 py-1 rounded text-xs ${project.is_active
+                    ? 'bg-emerald-500/20 text-emerald-400'
+                    : 'bg-slate-700 text-slate-400'
+                    }`}>
                     {project.is_active ? 'Active' : 'Inactive'}
                   </span>
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    project.is_public
-                      ? 'bg-indigo-500/20 text-indigo-400'
-                      : 'bg-slate-700 text-slate-400'
-                  }`}>
+                  <span className={`px-2 py-1 rounded text-xs ${project.is_public
+                    ? 'bg-indigo-500/20 text-indigo-400'
+                    : 'bg-slate-700 text-slate-400'
+                    }`}>
                     {project.is_public ? 'Public' : 'Private'}
                   </span>
                 </div>
@@ -351,7 +376,7 @@ const Projects = () => {
         )}
       </div>
       <Footer />
-    </div>
+    </div >
   )
 }
 

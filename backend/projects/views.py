@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .models import Project
 from .serializers import ProjectSerializer
+from .permissions import IsProjectOwnerOrReadOnly
 from accounts.permissions import IsStudent, IsAlumni
 
 
@@ -16,7 +17,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     ViewSet for Project model.
     """
     serializer_class = ProjectSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProjectOwnerOrReadOnly]
     search_fields = ['title', 'description', 'tech_stack']
     filterset_fields = ['is_active', 'is_public']
     ordering_fields = ['created_at', 'title']

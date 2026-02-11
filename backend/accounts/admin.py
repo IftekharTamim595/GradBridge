@@ -8,11 +8,11 @@ from .models import User
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ('email', 'username', 'role', 'is_verified', 'is_active', 'created_at')
-    list_filter = ('role', 'is_verified', 'is_active', 'created_at')
+    list_display = ('email', 'username', 'role', 'is_verified', 'is_approved', 'is_active', 'created_at')
+    list_filter = ('role', 'is_verified', 'is_approved', 'is_active', 'created_at')
     search_fields = ('email', 'username', 'first_name', 'last_name')
     ordering = ('-created_at',)
     
     fieldsets = BaseUserAdmin.fieldsets + (
-        ('Custom Fields', {'fields': ('role', 'is_verified')}),
+        ('Custom Fields', {'fields': ('role', 'is_verified', 'is_approved')}),
     )

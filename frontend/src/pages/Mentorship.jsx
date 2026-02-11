@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import axios from 'axios'
+import apiClient from '../api/apiClient'
 import { MessageCircle, Plus, X, Send, CheckCircle, AlertCircle, Clock } from 'lucide-react'
 import Footer from '../components/Footer'
+import { useModal } from '../contexts/ModalContext'
 
 const Mentorship = () => {
   const [requests, setRequests] = useState([])
   const [alumni, setAlumni] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [message, setMessage] = useState({ type: '', text: '' })
+  const { showModal } = useModal()
 
   useEffect(() => {
     fetchData()
@@ -18,27 +19,21 @@ const Mentorship = () => {
   const fetchData = async () => {
     try {
       const [requestsRes, alumniRes] = await Promise.all([
-        axios.get('http://localhost:8000/api/mentorship/mentorship-requests/'),
-        axios.get('http://localhost:8000/api/profiles/alumni/available_mentors/'),
+        apiClient.get('/mentorship/mentorship-requests/'),
+        apiClient.get('/profiles/alumni/available_mentors/'),
       ])
       setRequests(requestsRes.data.results || [])
       setAlumni(alumniRes.data || [])
     } catch (error) {
       console.error('Error fetching data:', error)
-      setMessage({ type: 'error', text: 'Failed to load mentorship data' })
+      showModal({ type: 'error', message: 'Failed to load mentorship data' })
     } finally {
       setLoading(false)
     }
   }
 
-  const showMessage = (type, text) => {
-    setMessage({ type, text })
-    setTimeout(() => setMessage({ type: '', text: '' }), 5000)
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setMessage({ type: '', text: '' })
     const formData = new FormData(e.target)
     const data = {
       alumni_profile_id: formData.get('alumni_profile_id'),
@@ -46,14 +41,14 @@ const Mentorship = () => {
     }
 
     try {
-      await axios.post('http://localhost:8000/api/mentorship/mentorship-requests/', data)
+      await apiClient.post('/mentorship/mentorship-requests/', data)
       await fetchData()
       setShowForm(false)
-      showMessage('success', 'Mentorship request sent successfully!')
+      showModal({ type: 'success', message: 'Mentorship request sent successfully!' })
     } catch (error) {
       console.error('Error sending request:', error)
       const errorMsg = error.response?.data?.detail || error.response?.data?.message || 'Error sending request'
-      showMessage('error', errorMsg)
+      showModal({ type: 'error', message: errorMsg })
     }
   }
 
@@ -110,25 +105,6 @@ const Mentorship = () => {
             <span>Request Mentorship</span>
           </motion.button>
         </div>
-
-        {message.text && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${
-              message.type === 'success'
-                ? 'bg-emerald-500/10 border border-emerald-500/50 text-emerald-400'
-                : 'bg-red-500/10 border border-red-500/50 text-red-400'
-            }`}
-          >
-            {message.type === 'success' ? (
-              <CheckCircle size={20} />
-            ) : (
-              <AlertCircle size={20} />
-            )}
-            <span>{message.text}</span>
-          </motion.div>
-        )}
 
         {showForm && (
           <motion.div

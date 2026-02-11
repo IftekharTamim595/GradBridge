@@ -18,6 +18,11 @@ const PrivateRoute = ({ children, requiredRole }) => {
   }
 
   if (requiredRole && user?.role !== requiredRole) {
+    // External users and unauthenticated users go to home
+    if (!user || user.role === 'external') {
+      return <Navigate to="/" replace />
+    }
+    // Other roles go to their dashboard
     return <Navigate to={`/${user?.role}/dashboard`} replace />
   }
 
