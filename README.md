@@ -293,7 +293,7 @@ Developed with ❤️ by the GradBridge Team
 
 ## 📧 Contact
 
-For questions or support, please contact [your-email@example.com]
+For questions or support, please contact [tamimbhuiyan890@gmail.com]
 
 ---
 
