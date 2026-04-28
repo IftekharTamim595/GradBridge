@@ -11,7 +11,9 @@ from .models import MentorshipRequest, ReferralRequest, Message
 from .serializers import (
     MentorshipRequestSerializer, ReferralRequestSerializer, MessageSerializer
 )
+from profiles.models import AlumniProfile
 from accounts.permissions import IsStudent, IsAlumni
+from rest_framework.views import APIView
 
 
 class MentorshipRequestViewSet(viewsets.ModelViewSet):
@@ -42,7 +44,7 @@ class MentorshipRequestViewSet(viewsets.ModelViewSet):
             except AlumniProfile.DoesNotExist:
                 return MentorshipRequest.objects.none()
         
-        elif user.is_admin:
+        elif user.is_staff:
             return MentorshipRequest.objects.all()
         
         return MentorshipRequest.objects.none()
@@ -53,10 +55,48 @@ class MentorshipRequestViewSet(viewsets.ModelViewSet):
         return context
     
     def perform_create(self, serializer):
-        from rest_framework.exceptions import PermissionDenied
+        from rest_framework.exceptions import PermissionDenied, ValidationError
         if not self.request.user.is_student:
             raise PermissionDenied("Only students can create mentorship requests")
-        serializer.save()
+            
+        student_profile = self.request.user.student_profile
+        alumni_profile = serializer.validated_data.get('alumni_profile')
+        
+        # Check for duplicates
+        if MentorshipRequest.objects.filter(student_profile=student_profile, alumni_profile=alumni_profile, status='pending').exists():
+            raise ValidationError({"error": "Already requested"})
+            
+        serializer.save(student_profile=student_profile)
+        
+class CreateMentorshipRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        if not request.user.is_student:
+            return Response({"error": "Only students can create mentorship requests"}, status=status.HTTP_403_FORBIDDEN)
+            
+        student_profile = request.user.student_profile
+        receiver_id = request.data.get('receiver_id')
+        
+        if not receiver_id:
+            return Response({"error": "receiver_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            alumni_profile = AlumniProfile.objects.get(id=receiver_id)
+        except AlumniProfile.DoesNotExist:
+            return Response({"error": "Alumni profile not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+        if MentorshipRequest.objects.filter(student_profile=student_profile, alumni_profile=alumni_profile, status='pending').exists():
+            return Response({"error": "Already requested"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        MentorshipRequest.objects.create(
+            student_profile=student_profile,
+            alumni_profile=alumni_profile,
+            message=request.data.get('message', ''),
+            status='pending'
+        )
+        
+        return Response({"message": "Request sent successfully"}, status=status.HTTP_201_CREATED)
     
     @action(detail=True, methods=['post'])
     def accept(self, request, pk=None):
@@ -157,7 +197,7 @@ class ReferralRequestViewSet(viewsets.ModelViewSet):
             except AlumniProfile.DoesNotExist:
                 return ReferralRequest.objects.none()
         
-        elif user.is_admin:
+        elif user.is_staff:
             return ReferralRequest.objects.all()
         
         return ReferralRequest.objects.none()

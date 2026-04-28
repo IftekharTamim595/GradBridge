@@ -36,18 +36,18 @@ class ErrorBoundary extends React.Component {
                             <AlertTriangle className="text-red-400\" size={40} />
                         </div>
 
-                        <h1 className="text-2xl font-bold text-white mb-3">
+                        <h1 className="text-2xl font-bold text-brand-textMain mb-3">
                             Something went wrong
                         </h1>
 
-                        <p className="text-slate-400 mb-8">
+                        <p className="text-brand-textSecondary mb-8">
                             An unexpected error occurred. This has been logged and we're working on a fix.
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-3 justify-center">
                             <button
                                 onClick={this.handleRetry}
-                                className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
+                                className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-brand-primary hover:bg-brand-primaryHover text-white hover:scale-[1.03] active:scale-[0.97] shadow-sm transition-all duration-200 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
                             >
                                 <RefreshCw size={18} />
                                 <span>Try Again</span>
@@ -55,7 +55,7 @@ class ErrorBoundary extends React.Component {
 
                             <a
                                 href="/"
-                                className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors"
+                                className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-brand-alt hover:bg-brand-primary hover:text-white text-brand-textMain rounded-lg font-medium transition-colors"
                             >
                                 <Home size={18} />
                                 <span>Go Home</span>
@@ -64,11 +64,11 @@ class ErrorBoundary extends React.Component {
 
                         {/* Development error details */}
                         {process.env.NODE_ENV === 'development' && this.state.error && (
-                            <details className="mt-8 text-left bg-slate-800 rounded-lg p-4 border border-slate-700">
-                                <summary className="text-sm text-slate-400 cursor-pointer hover:text-slate-300">
+                            <details className="mt-8 text-left bg-white border border-brand-border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 rounded-lg p-4 border border-brand-border">
+                                <summary className="text-sm text-brand-textSecondary cursor-pointer hover:text-slate-300">
                                     Error Details (Development Only)
                                 </summary>
-                                <pre className="mt-3 text-xs text-red-400 overflow-auto max-h-40">
+                                <pre className="mt-3 text-xs text-red-600 overflow-auto max-h-40">
                                     {this.state.error?.toString()}
                                     {this.state.errorInfo?.componentStack}
                                 </pre>

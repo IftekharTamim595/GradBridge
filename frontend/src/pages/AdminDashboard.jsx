@@ -35,8 +35,8 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 pt-16 flex items-center justify-center">
-        <div className="text-slate-400">Loading...</div>
+      <div className="min-h-screen bg-brand-bg pt-16 flex items-center justify-center">
+        <div className="text-brand-textSecondary">Loading...</div>
       </div>
     )
   }
@@ -59,8 +59,8 @@ const AdminDashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-12"
         >
-          <h1 className="text-4xl font-bold text-white mb-2">Admin Dashboard</h1>
-          <p className="text-slate-400 text-lg">Platform analytics and insights</p>
+          <h1 className="text-4xl font-bold text-brand-textMain mb-2">Admin Dashboard</h1>
+          <p className="text-brand-textSecondary text-lg">Platform analytics and insights</p>
         </motion.div>
 
         {/* Stats Grid */}
@@ -81,14 +81,14 @@ const AdminDashboard = () => {
                 'bg-purple-600/20'
               }`}>
                 <stat.icon className={
-                  stat.color === 'indigo' ? 'text-indigo-400' :
-                  stat.color === 'emerald' ? 'text-emerald-400' :
+                  stat.color === 'indigo' ? 'text-brand-primary' :
+                  stat.color === 'emerald' ? 'text-brand-success' :
                   stat.color === 'blue' ? 'text-blue-400' :
                   'text-purple-400'
                 } size={24} />
               </div>
-              <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
-              <div className="text-slate-400 text-sm">{stat.label}</div>
+              <div className="text-3xl font-bold text-brand-textMain mb-1">{stat.value}</div>
+              <div className="text-brand-textSecondary text-sm">{stat.label}</div>
             </motion.div>
           ))}
         </div>
@@ -102,8 +102,8 @@ const AdminDashboard = () => {
             transition={{ delay: 0.4 }}
             className="card"
           >
-            <h3 className="text-xl font-semibold text-white mb-6 flex items-center space-x-2">
-              <BarChart3 className="text-indigo-400" size={24} />
+            <h3 className="text-xl font-semibold text-brand-textMain mb-6 flex items-center space-x-2">
+              <BarChart3 className="text-brand-primary" size={24} />
               <span>Top Student Skills</span>
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -132,16 +132,16 @@ const AdminDashboard = () => {
             transition={{ delay: 0.5 }}
             className="card"
           >
-            <h3 className="text-xl font-semibold text-white mb-6">Engagement Metrics</h3>
+            <h3 className="text-xl font-semibold text-brand-textMain mb-6">Engagement Metrics</h3>
             <div className="space-y-6">
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-slate-400">Average Profile Strength</span>
-                  <span className="text-2xl font-bold text-white">
+                  <span className="text-brand-textSecondary">Average Profile Strength</span>
+                  <span className="text-2xl font-bold text-brand-textMain">
                     {engagement?.average_profile_strength?.toFixed(1) || 0}%
                   </span>
                 </div>
-                <div className="w-full bg-slate-700 rounded-full h-2">
+                <div className="w-full bg-brand-alt rounded-full h-2">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${engagement?.average_profile_strength || 0}%` }}
@@ -153,12 +153,12 @@ const AdminDashboard = () => {
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-slate-400">Mentorship Acceptance Rate</span>
-                  <span className="text-2xl font-bold text-white">
+                  <span className="text-brand-textSecondary">Mentorship Acceptance Rate</span>
+                  <span className="text-2xl font-bold text-brand-textMain">
                     {engagement?.mentorship_acceptance_rate?.toFixed(1) || 0}%
                   </span>
                 </div>
-                <div className="w-full bg-slate-700 rounded-full h-2">
+                <div className="w-full bg-brand-alt rounded-full h-2">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${engagement?.mentorship_acceptance_rate || 0}%` }}
@@ -168,28 +168,28 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-700">
-                <h4 className="text-sm font-semibold text-white mb-3">Recent Activity (30 days)</h4>
+              <div className="pt-4 border-t border-brand-border">
+                <h4 className="text-sm font-semibold text-brand-textMain mb-3">Recent Activity (30 days)</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">New Students</span>
-                    <span className="text-white font-medium">{engagement?.recent_activity?.new_students || 0}</span>
+                    <span className="text-brand-textSecondary">New Students</span>
+                    <span className="text-brand-textMain font-medium">{engagement?.recent_activity?.new_students || 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">New Alumni</span>
-                    <span className="text-white font-medium">{engagement?.recent_activity?.new_alumni || 0}</span>
+                    <span className="text-brand-textSecondary">New Alumni</span>
+                    <span className="text-brand-textMain font-medium">{engagement?.recent_activity?.new_alumni || 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">New Projects</span>
-                    <span className="text-white font-medium">{engagement?.recent_activity?.new_projects || 0}</span>
+                    <span className="text-brand-textSecondary">New Projects</span>
+                    <span className="text-brand-textMain font-medium">{engagement?.recent_activity?.new_projects || 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">New Mentorships</span>
-                    <span className="text-white font-medium">{engagement?.recent_activity?.new_mentorships || 0}</span>
+                    <span className="text-brand-textSecondary">New Mentorships</span>
+                    <span className="text-brand-textMain font-medium">{engagement?.recent_activity?.new_mentorships || 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">New Referrals</span>
-                    <span className="text-white font-medium">{engagement?.recent_activity?.new_referrals || 0}</span>
+                    <span className="text-brand-textSecondary">New Referrals</span>
+                    <span className="text-brand-textMain font-medium">{engagement?.recent_activity?.new_referrals || 0}</span>
                   </div>
                 </div>
               </div>

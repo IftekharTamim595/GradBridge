@@ -50,20 +50,20 @@ export const ModalProvider = ({ children }) => {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={closeModal}
-                            className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm"
+                            className="absolute inset-0 bg-brand-bg/80 backdrop-blur-sm"
                         />
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="relative w-full max-w-md bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden"
+                            className="relative w-full max-w-md bg-white border border-brand-border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 border border-brand-border rounded-2xl shadow-2xl overflow-hidden"
                         >
                             <div className="p-6">
                                 <div className="flex items-start space-x-4">
-                                    <div className={`shrink-0 p-3 rounded-xl ${modal.type === 'success' ? 'bg-emerald-500/10 text-emerald-400' :
-                                            modal.type === 'error' ? 'bg-red-500/10 text-red-400' :
+                                    <div className={`shrink-0 p-3 rounded-xl ${modal.type === 'success' ? 'bg-emerald-500/10 text-brand-success' :
+                                            modal.type === 'error' ? 'bg-red-500/10 text-red-600' :
                                                 modal.type === 'warning' ? 'bg-amber-500/10 text-amber-400' :
-                                                    'bg-indigo-500/10 text-indigo-400'
+                                                    'bg-indigo-500/10 text-brand-primary'
                                         }`}>
                                         {modal.type === 'success' && <CheckCircle size={24} />}
                                         {modal.type === 'error' && <AlertCircle size={24} />}
@@ -71,7 +71,7 @@ export const ModalProvider = ({ children }) => {
                                         {modal.type === 'info' && <Info size={24} />}
                                     </div>
                                     <div className="flex-1">
-                                        <h3 className="text-xl font-semibold text-white mb-2">
+                                        <h3 className="text-xl font-semibold text-brand-textMain mb-2">
                                             {modal.title || (
                                                 modal.type === 'success' ? 'Success' :
                                                     modal.type === 'error' ? 'Error' :
@@ -79,13 +79,13 @@ export const ModalProvider = ({ children }) => {
                                                             'Information'
                                             )}
                                         </h3>
-                                        <p className="text-slate-300 leading-relaxed">
+                                        <p className="text-brand-textSecondary leading-relaxed">
                                             {modal.message}
                                         </p>
                                     </div>
                                     <button
                                         onClick={closeModal}
-                                        className="shrink-0 text-slate-400 hover:text-white transition-colors"
+                                        className="shrink-0 text-brand-textSecondary hover:text-brand-primary transition-colors"
                                     >
                                         <X size={20} />
                                     </button>
@@ -95,7 +95,7 @@ export const ModalProvider = ({ children }) => {
                                     {modal.onConfirm && (
                                         <button
                                             onClick={closeModal}
-                                            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors"
+                                            className="px-4 py-2 bg-brand-alt hover:bg-brand-primary hover:text-white text-brand-textMain rounded-lg font-medium transition-colors"
                                         >
                                             {modal.cancelText}
                                         </button>
@@ -105,10 +105,10 @@ export const ModalProvider = ({ children }) => {
                                             if (modal.onConfirm) modal.onConfirm()
                                             closeModal()
                                         }}
-                                        className={`px-6 py-2 rounded-lg font-medium text-white transition-transform hover:scale-105 ${modal.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-500' :
+                                        className={`px-6 py-2 rounded-lg font-medium text-brand-textMain transition-transform hover:scale-105 ${modal.type === 'success' ? 'bg-brand-success text-white hover:bg-emerald-500' :
                                                 modal.type === 'error' ? 'bg-red-600 hover:bg-red-500' :
                                                     modal.type === 'warning' ? 'bg-amber-600 hover:bg-amber-500' :
-                                                        'bg-indigo-600 hover:bg-indigo-500'
+                                                        'bg-brand-primary hover:bg-brand-primaryHover text-white hover:scale-[1.03] active:scale-[0.97] shadow-sm transition-all duration-200 hover:bg-indigo-500'
                                             }`}
                                     >
                                         {modal.confirmText}

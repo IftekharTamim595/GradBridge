@@ -27,10 +27,13 @@ ALLOWED_HOSTS = [
     '.trycloudflare.com'
 ]
 
+# Admin email allowlist for OAuth
+ADMIN_EMAIL_ALLOWLIST = config('ADMIN_EMAIL_ALLOWLIST', default='', cast=lambda v: [s.strip() for s in v.split(',') if s.strip()])
 
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',  # Must be before django.contrib.admin
     'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -43,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'channels',
+    'django_filters',
 
     # Local apps
     'accounts',
@@ -55,6 +59,8 @@ INSTALLED_APPS = [
     'chat',
     'notifications',
     'ai_insights',
+    'search',
+    'jobs',
     
     # Auth
     'django.contrib.sites',
@@ -242,6 +248,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ),
@@ -287,4 +294,26 @@ SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
 SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 
 
+# Jazzmin Admin UI Configuration
+try:
+    from .jazzmin_settings import JAZZMIN_SETTINGS, JAZZMIN_UI_TWEAKS
+except ImportError:
+    # Fallback to inline settings if separate file doesn't exist
+    JAZZMIN_SETTINGS = {
+        "site_title": "GradBridge Admin",
+        "site_header": "GradBridge",
+        "welcome_sign": "Welcome to GradBridge Admin",
+        "theme": "darkly",
+    }
+    JAZZMIN_UI_TWEAKS = {}
+
 #print("GOOGLE_CLIENT_ID =", os.getenv("GOOGLE_CLIENT_ID"))
+
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config('EMAIL_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_PASS')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

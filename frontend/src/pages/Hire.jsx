@@ -6,7 +6,6 @@ import { MapPin, User, Search, Filter, ExternalLink, Mail, Loader, Map } from 'l
 import { useChat } from '../contexts/ChatContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import Footer from '../components/Footer'
 
 const Hire = () => {
   const [students, setStudents] = useState([])
@@ -68,23 +67,20 @@ const Hire = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 pt-16 flex items-center justify-center">
-        <Loader className="animate-spin text-indigo-400" size={32} />
+      <div className="min-h-screen bg-brand-bg pt-16 flex items-center justify-center">
+        <Loader className="animate-spin text-brand-primary" size={32} />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pt-16">
+    <div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-4xl font-bold text-white mb-2">Hire Students</h1>
-          <p className="text-slate-400">Discover and recruit top talent from our student community</p>
-        </motion.div>
+      <div className="mb-8">
+        <p className="text-xs font-mono-ui text-slate-400 uppercase tracking-widest mb-1">Recruitment</p>
+        <h1 className="font-heading text-3xl text-slate-900">Hire Students</h1>
+        <p className="text-slate-500 mt-1">Discover and recruit top talent from our student community</p>
+      </div>
 
         {/* Search & Filters */}
         <motion.div
@@ -95,7 +91,7 @@ const Hire = () => {
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-brand-textSecondary" size={18} />
               <input
                 type="text"
                 placeholder="Search by name, degree..."
@@ -105,7 +101,7 @@ const Hire = () => {
               />
             </div>
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-brand-textSecondary" size={18} />
               <input
                 type="text"
                 placeholder="Filter by Skill"
@@ -115,7 +111,7 @@ const Hire = () => {
               />
             </div>
             <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-brand-textSecondary" size={18} />
               <input
                 type="text"
                 placeholder="Location (City)"
@@ -132,8 +128,8 @@ const Hire = () => {
           <div className="lg:col-span-2 space-y-4">
             {students.length === 0 ? (
               <div className="card text-center py-12">
-                <User className="text-slate-400 mx-auto mb-4" size={48} />
-                <p className="text-slate-400">No students found matching your criteria.</p>
+                <User className="text-brand-textSecondary mx-auto mb-4" size={48} />
+                <p className="text-brand-textSecondary">No students found matching your criteria.</p>
               </div>
             ) : (
               students.map((student, index) => (
@@ -142,71 +138,75 @@ const Hire = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  whileHover={{ y: -2 }}
-                  className="card"
+                  whileHover={{ y: -4 }}
+                  className="card group !p-0 overflow-hidden border border-slate-200 hover:border-brand-primary/30 transition-all shadow-md hover:shadow-xl"
                 >
-                  <div className="flex items-start space-x-4">
-                    <div className="w-16 h-16 bg-indigo-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <User className="text-indigo-400" size={32} />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="text-xl font-semibold text-white mb-1">
-                            {student.user?.first_name} {student.user?.last_name}
-                          </h3>
-                          <p className="text-slate-400 text-sm">{student.user?.email}</p>
-                        </div>
-                        <span className="flex items-center space-x-1 text-emerald-400 text-sm font-medium">
-                          <span>{student.profile_strength}% Strength</span>
-                        </span>
-                      </div>
-
-                      <div className="mb-3">
-                        <p className="text-slate-300 text-sm mb-2 max-w-xl">{student.bio || 'No bio available'}</p>
-                        <div className="flex items-center space-x-4 text-xs text-slate-500 mb-3">
-                          {student.city && student.country && (
-                            <span className="flex items-center space-x-1">
-                              <MapPin size={12} />
-                              <span>{student.city}, {student.country}</span>
-                            </span>
-                          )}
-                          <span>Batch: {student.batch}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {student.skills?.slice(0, 6).map((skill) => (
-                          <span
-                            key={skill.id}
-                            className="px-2 py-1 bg-indigo-600/20 text-indigo-300 text-xs rounded border border-indigo-500/30"
-                          >
-                            {skill.name}
-                          </span>
-                        ))}
-                        {student.skills?.length > 6 && (
-                          <span className="px-2 py-1 bg-slate-700 text-slate-400 text-xs rounded">
-                            +{student.skills.length - 6} more
-                          </span>
+                  <div className="p-6">
+                    <div className="flex gap-5">
+                      {/* Avatar */}
+                      <div className="w-20 h-20 rounded-2xl bg-brand-alt border border-slate-100 flex items-center justify-center shrink-0 overflow-hidden shadow-inner group-hover:scale-105 transition-transform">
+                        {student.user?.profile_photo ? (
+                          <img src={student.user.profile_photo} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="text-brand-primary/40" size={32} />
                         )}
                       </div>
 
-                      <div className="flex items-center space-x-3 pt-4 border-t border-slate-700">
-                        <Link
-                          to={`/students/${student.id}`}
-                          className="btn-primary text-sm flex items-center space-x-2"
-                        >
-                          <ExternalLink size={16} />
-                          <span>View Profile</span>
-                        </Link>
-                        <button
-                          onClick={() => handleSendMessage(student)}
-                          className="btn-secondary text-sm flex items-center space-x-2"
-                        >
-                          <Mail size={16} />
-                          <span>Send Message</span>
-                        </button>
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start mb-1">
+                          <h3 className="text-xl font-heading text-slate-900 group-hover:text-brand-primary transition-colors truncate">
+                            {student.user?.first_name} {student.user?.last_name}
+                          </h3>
+                          <div className="flex items-center gap-1.5 bg-brand-alt px-2.5 py-1 rounded-full border border-brand-primary/10">
+                            <div className="w-1.5 h-1.5 bg-brand-primary rounded-full animate-pulse" />
+                            <span className="text-[10px] font-bold text-brand-primary uppercase tracking-wider">{student.profile_strength || 0} Score</span>
+                          </div>
+                        </div>
+                        <p className="text-sm font-medium text-slate-600 mb-2 truncate">
+                          {student.degree} • {student.university}
+                        </p>
+                        
+                        <div className="flex flex-wrap gap-1.5">
+                          {student.skills?.slice(0, 4).map(skill => (
+                            <span key={skill.id} className="text-[10px] font-bold bg-slate-50 text-slate-500 px-2 py-1 rounded-md border border-slate-100 uppercase">
+                              {skill.name}
+                            </span>
+                          ))}
+                        </div>
                       </div>
+                    </div>
+
+                    {/* Project Preview */}
+                    {student.projects?.length > 0 && (
+                      <div className="mt-5 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Recent Project</p>
+                        <h4 className="text-sm font-bold text-slate-800 line-clamp-1">{student.projects[0].title}</h4>
+                        <p className="text-xs text-slate-500 line-clamp-1 mt-1">{student.projects[0].description}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div className="bg-slate-50/50 border-t border-slate-100 px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 text-[11px] font-medium text-slate-400">
+                        <MapPin size={12} />
+                        <span>{student.city || 'Remote'}</span>
+                      </div>
+                      <div className="w-1 h-1 bg-slate-300 rounded-full" />
+                      <div className="text-[11px] font-medium text-slate-400">
+                        Class of {student.batch}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                       <button onClick={() => handleSendMessage(student)} className="p-2 text-slate-400 hover:text-brand-primary hover:bg-white rounded-lg border border-transparent hover:border-slate-200 transition-all">
+                        <Mail size={18} />
+                       </button>
+                       <Link to={`/students/${student.id}`} className="btn-primary !py-2 !px-4 text-xs font-bold gap-2">
+                        View Profile
+                        <ExternalLink size={14} />
+                       </Link>
                     </div>
                   </div>
                 </motion.div>
@@ -217,26 +217,26 @@ const Hire = () => {
           {/* Map Placeholder Sidebar */}
           <div className="lg:col-span-1">
             <div className="card sticky top-24">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-                <Map className="text-indigo-400" size={20} />
+              <h3 className="text-lg font-semibold text-brand-textMain mb-4 flex items-center space-x-2">
+                <Map className="text-brand-primary" size={20} />
                 <span>Nearby Talent</span>
               </h3>
-              <div className="w-full h-64 bg-slate-800 rounded-lg flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-slate-700">
-                <MapPin className="text-slate-600 mb-2" size={48} />
-                <p className="text-slate-400 font-medium">Interactive Map View</p>
-                <p className="text-slate-500 text-xs mt-1">Coming soon. Visualize candidate locations near you.</p>
+              <div className="w-full h-64 bg-white border border-brand-border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 rounded-lg flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-brand-border">
+                <MapPin className="text-brand-textMuted mb-2" size={48} />
+                <p className="text-brand-textSecondary font-medium">Interactive Map View</p>
+                <p className="text-brand-textMuted text-xs mt-1">Coming soon. Visualize candidate locations near you.</p>
               </div>
 
               <div className="mt-6 pt-6 border-t border-slate-800/50">
-                <h4 className="text-white font-medium mb-2">Hiring Stats</h4>
+                <h4 className="text-brand-textMain font-medium mb-2">Hiring Stats</h4>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-900 p-3 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-indigo-400">{students.length}</div>
-                    <div className="text-xs text-slate-500">Candidates</div>
+                  <div className="bg-brand-bg p-3 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-brand-primary">{students.length}</div>
+                    <div className="text-xs text-brand-textMuted">Candidates</div>
                   </div>
-                  <div className="bg-slate-900 p-3 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-emerald-400">12</div>
-                    <div className="text-xs text-slate-500">New Today</div>
+                  <div className="bg-brand-bg p-3 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-brand-success">12</div>
+                    <div className="text-xs text-brand-textMuted">New Today</div>
                   </div>
                 </div>
               </div>
@@ -244,7 +244,6 @@ const Hire = () => {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   )
 }

@@ -3,11 +3,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import apiClient from '../api/apiClient'
 import { useAuth } from '../contexts/AuthContext'
-import {
-  Users, TrendingUp, Award, Search,
-  ArrowRight, BarChart3, MessageCircle
-} from 'lucide-react'
-import Footer from '../components/Footer'
+import { Users, TrendingUp, Award, Search, ArrowRight, BarChart3, MessageCircle } from 'lucide-react'
 
 const AlumniDashboard = () => {
   const { user, loading: authLoading, isAuthenticated } = useAuth()
@@ -16,12 +12,8 @@ const AlumniDashboard = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Wait for auth state to be ready before fetching
-    if (!authLoading && isAuthenticated) {
-      fetchData()
-    } else if (!authLoading && !isAuthenticated) {
-      setLoading(false)
-    }
+    if (!authLoading && isAuthenticated) fetchData()
+    else if (!authLoading && !isAuthenticated) setLoading(false)
   }, [authLoading, isAuthenticated])
 
   const fetchData = async () => {
@@ -30,157 +22,105 @@ const AlumniDashboard = () => {
         apiClient.get('/profiles/alumni/'),
         apiClient.get('/analytics/alumni/'),
       ])
-
-      if (profileRes.data.results && profileRes.data.results.length > 0) {
-        setProfile(profileRes.data.results[0])
-      }
+      if (profileRes.data.results?.length > 0) setProfile(profileRes.data.results[0])
       setAnalytics(analyticsRes.data)
-    } catch (error) {
-      console.error('Error fetching data:', error)
-    } finally {
-      setLoading(false)
-    }
+    } catch (e) { console.error(e) }
+    finally { setLoading(false) }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-900 pt-16 flex items-center justify-center">
-        <div className="text-slate-400">Loading...</div>
-      </div>
-    )
-  }
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="spinner" />
+    </div>
+  )
 
   const stats = [
-    {
-      label: 'Students Mentored',
-      value: analytics?.students_mentored || profile?.students_mentored_count || 0,
-      icon: Users,
-      color: 'indigo',
-    },
-    {
-      label: 'Referrals Made',
-      value: analytics?.referrals_made || profile?.referrals_made_count || 0,
-      icon: TrendingUp,
-      color: 'emerald',
-    },
-    {
-      label: 'Top Skills Discovered',
-      value: analytics?.top_skills_discovered?.length || 0,
-      icon: Award,
-      color: 'blue',
-    },
+    { label: 'Students Mentored',   value: analytics?.students_mentored || profile?.students_mentored_count || 0, icon: Users,      color: '#0052FF' },
+    { label: 'Referrals Made',      value: analytics?.referrals_made    || profile?.referrals_made_count    || 0, icon: TrendingUp,  color: '#22C55E' },
+    { label: 'Top Skills Found',    value: analytics?.top_skills_discovered?.length || 0,                        icon: Award,       color: '#7C3AED' },
+    { label: 'Profile Views',       value: analytics?.profile_views || 0,                                        icon: BarChart3,   color: '#F59E0B' },
+  ]
+
+  const actions = [
+    { to: '/students/search',  icon: Search,        label: 'Find Students',  sub: 'Discover talent',       color: '#0052FF' },
+    { to: '/alumni/profile',   icon: BarChart3,     label: 'Update Profile', sub: 'Stay professional',     color: '#22C55E' },
+    { to: '/messages',         icon: MessageCircle, label: 'Messages',       sub: 'Check your inbox',      color: '#7C3AED' },
+    { to: '/community',        icon: Users,         label: 'Community',      sub: 'Engage with peers',     color: '#F59E0B' },
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-12"
-        >
-          <h1 className="text-4xl font-bold text-white mb-2">Alumni Dashboard</h1>
-          <p className="text-slate-400 text-lg">Welcome back, {user?.first_name || user?.email}</p>
-        </motion.div>
+    <div>
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+        <p className="text-xs font-mono-ui text-slate-400 uppercase tracking-widest mb-1">Alumni Dashboard</p>
+        <h1 className="font-heading text-3xl text-slate-900">
+          Welcome back, {user?.first_name || 'Alumni'} 👋
+        </h1>
+        <p className="text-slate-500 mt-1">Track your mentoring impact and discover students.</p>
+      </motion.div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -5 }}
-              className="card"
-            >
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${stat.color === 'indigo' ? 'bg-indigo-600/20' :
-                stat.color === 'emerald' ? 'bg-emerald-600/20' :
-                  'bg-blue-600/20'
-                }`}>
-                <stat.icon className={
-                  stat.color === 'indigo' ? 'text-indigo-400' :
-                    stat.color === 'emerald' ? 'text-emerald-400' :
-                      'text-blue-400'
-                } size={24} />
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        {stats.map((s, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.08 }}
+            className="stat-card"
+          >
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: `${s.color}18` }}>
+              <s.icon size={18} style={{ color: s.color }} />
+            </div>
+            <div className="font-heading text-3xl text-slate-900">{s.value}</div>
+            <div className="text-xs text-slate-500 mt-0.5">{s.label}</div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Quick actions */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="card mb-6"
+      >
+        <h2 className="font-semibold text-slate-800 mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {actions.map((a, i) => (
+            <Link key={i} to={a.to}
+              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-center group">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${a.color}18` }}>
+                <a.icon size={18} style={{ color: a.color }} />
               </div>
-              <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
-              <div className="text-slate-400 text-sm">{stat.label}</div>
-            </motion.div>
+              <div>
+                <div className="text-sm font-medium text-slate-700 group-hover:text-[#0052FF] transition-colors">{a.label}</div>
+                <div className="text-xs text-slate-400">{a.sub}</div>
+              </div>
+            </Link>
           ))}
         </div>
+      </motion.div>
 
-        {/* Quick Actions */}
+      {/* Top Skills Discovered */}
+      {analytics?.top_skills_discovered?.length > 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="card mb-8"
+          transition={{ delay: 0.4 }}
+          className="card"
         >
-          <h2 className="text-xl font-semibold text-white mb-6">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link
-              to="/alumni/search"
-              className="flex items-center space-x-4 p-6 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-all group"
-            >
-              <div className="w-12 h-12 bg-indigo-600/20 rounded-lg flex items-center justify-center">
-                <Search className="text-indigo-400" size={24} />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-white font-semibold mb-1 group-hover:text-indigo-400 transition-colors">
-                  Search Students
-                </h3>
-                <p className="text-slate-400 text-sm">Find and review student profiles</p>
-              </div>
-              <ArrowRight className="text-slate-400 group-hover:text-white group-hover:translate-x-1 transition-all" size={20} />
-            </Link>
-
-            <Link
-              to="/alumni/profile"
-              className="flex items-center space-x-4 p-6 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-all group"
-            >
-              <div className="w-12 h-12 bg-emerald-600/20 rounded-lg flex items-center justify-center">
-                <BarChart3 className="text-emerald-400" size={24} />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-white font-semibold mb-1 group-hover:text-emerald-400 transition-colors">
-                  Update Profile
-                </h3>
-                <p className="text-slate-400 text-sm">Manage your alumni profile</p>
-              </div>
-              <ArrowRight className="text-slate-400 group-hover:text-white group-hover:translate-x-1 transition-all" size={20} />
-            </Link>
+          <h2 className="font-semibold text-slate-800 mb-4">Top Skills in Student Pool</h2>
+          <div className="flex flex-wrap gap-2">
+            {analytics.top_skills_discovered.slice(0, 12).map((skill, i) => (
+              <span key={i} className="skill-pill">
+                {skill.name}
+                <span className="ml-1 opacity-60">({skill.count})</span>
+              </span>
+            ))}
           </div>
         </motion.div>
-
-        {/* Top Skills */}
-        {analytics?.top_skills_discovered && analytics.top_skills_discovered.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="card"
-          >
-            <h2 className="text-xl font-semibold text-white mb-6">Top Skills Discovered</h2>
-            <div className="flex flex-wrap gap-3">
-              {analytics.top_skills_discovered.slice(0, 10).map((skill, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5 + index * 0.05 }}
-                  className="px-4 py-2 bg-indigo-600/20 border border-indigo-500/30 rounded-lg"
-                >
-                  <span className="text-indigo-300 font-medium">{skill.name}</span>
-                  <span className="text-slate-400 text-sm ml-2">({skill.count})</span>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </div>
-      <Footer />
+      )}
     </div>
   )
 }

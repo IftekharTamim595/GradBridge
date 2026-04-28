@@ -2,6 +2,7 @@
   "name": "gradbridge-frontend",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@react-oauth/google": "^0.13.4",
     "autoprefixer": "^10.4.16",

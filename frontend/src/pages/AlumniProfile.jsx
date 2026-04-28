@@ -2,16 +2,16 @@ import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import apiClient from '../api/apiClient'
 import { Save, CheckCircle, AlertCircle, Briefcase, Building, Award, MapPin, Search, X, ChevronDown, ChevronUp } from 'lucide-react'
-import Footer from '../components/Footer'
 import { useModal } from '../contexts/ModalContext'
 import { useAuth } from '../contexts/AuthContext'
+import SkillSelect from '../components/SkillSelect'
 
 const AlumniProfile = () => {
   const [profile, setProfile] = useState(null)
-  const [skills, setSkills] = useState([])
-  const [selectedSkills, setSelectedSkills] = useState([])
+  const [selectedSkillNames, setSelectedSkillNames] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [skills, setSkills] = useState([])
 
   const { showModal } = useModal()
   const { user, loading: authLoading, isAuthenticated } = useAuth()
@@ -67,9 +67,8 @@ const AlumniProfile = () => {
       if (profileRes.data) {
         const prof = profileRes.data
         setProfile(prof)
-        setSelectedSkills(prof.skills?.map(s => s.id) || [])
+        setSelectedSkillNames(prof.skills?.map(s => s.name) || [])
       }
-      setSkills(skillsRes.data.results || [])
     } catch (error) {
       console.error('Error fetching data:', error)
       if (error.response?.status !== 404) {
@@ -108,7 +107,7 @@ const AlumniProfile = () => {
         bio: formData.get('bio'),
         city: formData.get('city'),
         country: formData.get('country'),
-        skill_ids: selectedSkills,
+        skill_names: selectedSkillNames,
       }
 
       if (profile) {
@@ -139,46 +138,86 @@ const AlumniProfile = () => {
     }
   }
 
-  const removeSkillTag = (skillId) => {
-    setSelectedSkills(selectedSkills.filter(id => id !== skillId))
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      showModal({ type: 'error', message: 'Image size must be less than 5MB' })
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('profile_picture', file)
+
+    try {
+      await apiClient.patch('/profiles/alumni/me/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      await fetchData()
+      showModal({ type: 'success', message: 'Profile photo updated!' })
+    } catch (error) {
+      console.error('Error uploading photo:', error)
+      showModal({ type: 'error', message: getErrorMessage(error) })
+    }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 pt-16 flex items-center justify-center">
-        <div className="text-slate-400">Loading...</div>
+      <div className="min-h-screen bg-brand-bg pt-16 flex items-center justify-center">
+        <div className="text-brand-textSecondary">Loading...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pt-16">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-4xl font-bold text-white mb-2">Alumni Profile</h1>
-          <p className="text-slate-400">Update your professional information and availability</p>
-        </motion.div>
-
-
+    <div className="max-w-2xl">
+      <div className="mb-6">
+        <p className="text-xs font-mono-ui text-slate-400 uppercase tracking-widest mb-1">Account</p>
+        <h1 className="font-heading text-3xl text-slate-900">Alumni Profile</h1>
+        <p className="text-slate-500 mt-1">Update your professional information and availability</p>
+      </div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
+          <div className="card shadow-xl mb-6">
+            <div className="flex flex-col items-center pb-8 border-b border-slate-100 mb-8">
+              <div className="relative group">
+                <div className="w-28 h-28 rounded-full overflow-hidden bg-slate-50 border-4 border-white shadow-lg ring-1 ring-slate-200">
+                  {profile?.profile_picture || profile?.user?.profile_photo ? (
+                    <img
+                      src={profile.profile_picture || profile.user.profile_photo}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-brand-alt text-4xl font-bold text-brand-primary">
+                      {(user?.first_name?.[0] || 'A') + (user?.last_name?.[0] || 'L')}
+                    </div>
+                  )}
+                </div>
+                <label className="absolute bottom-1 right-1 p-2 bg-brand-primary text-white rounded-full cursor-pointer hover:bg-brand-primaryHover shadow-lg transition-all hover:scale-110 active:scale-95">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
+                </label>
+              </div>
+              <h3 className="mt-4 font-semibold text-slate-800">{user?.first_name} {user?.last_name}</h3>
+              <p className="text-xs text-slate-400">Allowed formats: JPG, PNG. Max size 5MB.</p>
+            </div>
+          </div>
+
           <form onSubmit={handleSave} className="card space-y-6">
-            <div className="border-b border-slate-700 pb-6">
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center space-x-2">
-                <Briefcase className="text-indigo-400" size={20} />
+            <div className="border-b border-brand-border pb-6">
+              <h2 className="text-xl font-semibold text-brand-textMain mb-4 flex items-center space-x-2">
+                <Briefcase className="text-brand-primary" size={20} />
                 <span>Professional Information</span>
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Current Company</label>
+                  <label className="block text-sm font-medium text-brand-textSecondary mb-2">Current Company</label>
                   <input
                     type="text"
                     name="current_company"
@@ -188,7 +227,7 @@ const AlumniProfile = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Current Position</label>
+                  <label className="block text-sm font-medium text-brand-textSecondary mb-2">Current Position</label>
                   <input
                     type="text"
                     name="current_position"
@@ -200,7 +239,7 @@ const AlumniProfile = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Industry</label>
+                  <label className="block text-sm font-medium text-brand-textSecondary mb-2">Industry</label>
                   <input
                     type="text"
                     name="industry"
@@ -210,7 +249,7 @@ const AlumniProfile = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Years of Experience</label>
+                  <label className="block text-sm font-medium text-brand-textSecondary mb-2">Years of Experience</label>
                   <input
                     type="number"
                     name="years_of_experience"
@@ -222,14 +261,14 @@ const AlumniProfile = () => {
               </div>
             </div>
 
-            <div className="border-b border-slate-700 pb-6">
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center space-x-2">
-                <Building className="text-indigo-400" size={20} />
+            <div className="border-b border-brand-border pb-6">
+              <h2 className="text-xl font-semibold text-brand-textMain mb-4 flex items-center space-x-2">
+                <Building className="text-brand-primary" size={20} />
                 <span>Education</span>
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">University</label>
+                  <label className="block text-sm font-medium text-brand-textSecondary mb-2">University</label>
                   <input
                     type="text"
                     name="university"
@@ -239,7 +278,7 @@ const AlumniProfile = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Degree</label>
+                  <label className="block text-sm font-medium text-brand-textSecondary mb-2">Degree</label>
                   <input
                     type="text"
                     name="degree"
@@ -251,7 +290,7 @@ const AlumniProfile = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Graduation Year</label>
+                  <label className="block text-sm font-medium text-brand-textSecondary mb-2">Graduation Year</label>
                   <input
                     type="number"
                     name="graduation_year"
@@ -261,7 +300,7 @@ const AlumniProfile = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Batch</label>
+                  <label className="block text-sm font-medium text-brand-textSecondary mb-2">Batch</label>
                   <input
                     type="text"
                     name="batch"
@@ -274,116 +313,19 @@ const AlumniProfile = () => {
             </div>
 
             <div>
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center space-x-2">
-                <Award className="text-indigo-400" size={20} />
+              <h2 className="text-xl font-semibold text-brand-textMain mb-4 flex items-center space-x-2">
+                <Award className="text-brand-primary" size={20} />
                 <span>Skills & Expertise</span>
               </h2>
-              <div className="relative" ref={skillsDropdownRef}>
-                <div className="mb-3 flex flex-wrap gap-2">
-                  {selectedSkills.map(skillId => {
-                    const skill = skills.find(s => s.id === skillId)
-                    if (!skill) return null
-                    return (
-                      <span key={skillId} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                        {skill.name}
-                        <button
-                          type="button"
-                          onClick={() => removeSkillTag(skillId)}
-                          className="ml-2 hover:text-white focus:outline-none"
-                        >
-                          <X size={14} />
-                        </button>
-                      </span>
-                    )
-                  })}
-                </div>
-
-                <div className="relative mb-4">
-                  <button
-                    type="button"
-                    onClick={() => setIsSkillsOpen(!isSkillsOpen)}
-                    className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-left text-slate-300 flex justify-between items-center hover:bg-slate-900 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  >
-                    <span>{selectedSkills.length > 0 ? `${selectedSkills.length} skills selected` : 'Select Skills'}</span>
-                    {isSkillsOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                  </button>
-
-                  <AnimatePresence>
-                    {isSkillsOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="absolute z-10 w-full mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-60 overflow-hidden flex flex-col"
-                      >
-                        <div className="p-2 border-b border-slate-700 space-y-2">
-                          <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={16} />
-                            <input
-                              type="text"
-                              placeholder="Search skills..."
-                              className="w-full bg-slate-900 border border-slate-700 rounded px-9 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500"
-                              value={skillSearch}
-                              onChange={(e) => setSkillSearch(e.target.value)}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          </div>
-                          {skillSearch && !filteredSkills.find(s => s.name.toLowerCase() === skillSearch.toLowerCase()) && (
-                            <button
-                              type="button"
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                try {
-                                  const res = await apiClient.post('/profiles/skills/', { name: skillSearch });
-                                  const newSkill = res.data;
-                                  setSkills([...skills, newSkill]);
-                                  setSelectedSkills([...selectedSkills, newSkill.id]);
-                                  setSkillSearch('');
-                                  showModal({ type: 'success', message: `Added skill: ${newSkill.name}` });
-                                } catch (err) {
-                                  showModal({ type: 'error', message: 'Failed to add skill. It may already exist.' });
-                                }
-                              }}
-                              className="w-full text-left text-xs text-indigo-400 hover:text-indigo-300 px-1 py-1 flex items-center"
-                            >
-                              <span className="mr-1">+</span> Add "{skillSearch}" as new skill
-                            </button>
-                          )}
-                        </div>
-                        <div className="overflow-y-auto flex-1 p-2">
-                          {filteredSkills.length > 0 ? (
-                            filteredSkills.map(skill => (
-                              <label
-                                key={skill.id}
-                                className="flex items-center space-x-3 p-2 hover:bg-slate-700 rounded cursor-pointer transition-colors"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedSkills.includes(skill.id)
-                                  ? 'bg-indigo-600 border-indigo-600'
-                                  : 'border-slate-500 bg-transparent'
-                                  }`}>
-                                  {selectedSkills.includes(skill.id) && <CheckCircle size={14} className="text-white" />}
-                                </div>
-                                <span className="text-slate-300 text-sm">{skill.name}</span>
-                                <input
-                                  type="checkbox"
-                                  className="hidden"
-                                  checked={selectedSkills.includes(skill.id)}
-                                  onChange={() => toggleSkill(skill.id)}
-                                />
-                              </label>
-                            ))
-                          ) : (
-                            <div className="p-4 text-center text-slate-500 text-sm">No skills found</div>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                <div className="mt-3">
+                  <SkillSelect 
+                    selectedSkills={selectedSkillNames} 
+                    onChange={setSelectedSkillNames} 
+                  />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Expertise Areas</label>
+                <label className="block text-sm font-medium text-brand-textSecondary mb-2">Expertise Areas</label>
                 <textarea
                   name="expertise_areas"
                   rows={3}
@@ -392,10 +334,9 @@ const AlumniProfile = () => {
                   placeholder="Describe your areas of expertise and specialization..."
                 />
               </div>
-            </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Bio</label>
+              <label className="block text-sm font-medium text-brand-textSecondary mb-2">Bio</label>
               <textarea
                 name="bio"
                 rows={4}
@@ -406,7 +347,7 @@ const AlumniProfile = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">LinkedIn</label>
+              <label className="block text-sm font-medium text-brand-textSecondary mb-2">LinkedIn</label>
               <input
                 type="url"
                 name="linkedin_url"
@@ -416,14 +357,14 @@ const AlumniProfile = () => {
               />
             </div>
 
-            <div className="border-b border-slate-700 pb-6">
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center space-x-2">
-                <MapPin className="text-indigo-400" size={20} />
+            <div className="border-b border-brand-border pb-6">
+              <h2 className="text-xl font-semibold text-brand-textMain mb-4 flex items-center space-x-2">
+                <MapPin className="text-brand-primary" size={20} />
                 <span>Location</span>
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">City <span className="text-red-400">*</span></label>
+                  <label className="block text-sm font-medium text-brand-textSecondary mb-2">City <span className="text-red-600">*</span></label>
                   <input
                     type="text"
                     name="city"
@@ -434,7 +375,7 @@ const AlumniProfile = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Country <span className="text-red-400">*</span></label>
+                  <label className="block text-sm font-medium text-brand-textSecondary mb-2">Country <span className="text-red-600">*</span></label>
                   <input
                     type="text"
                     name="country"
@@ -447,28 +388,28 @@ const AlumniProfile = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-6 pt-4 border-t border-slate-700">
+            <div className="flex items-center space-x-6 pt-4 border-t border-brand-border">
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
                   name="available_for_mentorship"
                   defaultChecked={profile?.available_for_mentorship !== false}
-                  className="w-4 h-4 text-indigo-600 bg-slate-700 border-slate-600 rounded focus:ring-indigo-500"
+                  className="w-4 h-4 text-brand-primary bg-brand-alt border-brand-border rounded focus:ring-indigo-500"
                 />
-                <span className="text-slate-300">Available for Mentorship</span>
+                <span className="text-brand-textSecondary">Available for Mentorship</span>
               </label>
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
                   name="available_for_referrals"
                   defaultChecked={profile?.available_for_referrals !== false}
-                  className="w-4 h-4 text-indigo-600 bg-slate-700 border-slate-600 rounded focus:ring-indigo-500"
+                  className="w-4 h-4 text-brand-primary bg-brand-alt border-brand-border rounded focus:ring-indigo-500"
                 />
-                <span className="text-slate-300">Available for Referrals</span>
+                <span className="text-brand-textSecondary">Available for Referrals</span>
               </label>
             </div>
 
-            <div className="flex justify-end pt-4 border-t border-slate-700">
+            <div className="flex justify-end pt-4 border-t border-brand-border">
               <button
                 type="submit"
                 disabled={saving}
@@ -480,8 +421,6 @@ const AlumniProfile = () => {
             </div>
           </form>
         </motion.div>
-      </div>
-      <Footer />
     </div>
   )
 }

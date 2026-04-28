@@ -10,6 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .serializers import UserRegistrationSerializer, UserSerializer, LoginSerializer
 from .models import User
+from utils.email_service import send_email
 
 
 @api_view(['POST'])
@@ -23,13 +24,17 @@ def register(request):
     serializer = UserRegistrationSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
+        
+        # Send welcome email
+        subject = "Welcome to GradBridge!"
+        message = f"Hello {user.first_name or user.email},\n\nWelcome to GradBridge! Your account has been successfully created. We're excited to have you on board."
+        send_email(user.email, subject, message)
+        
         refresh = RefreshToken.for_user(user)
         return Response({
             'user': UserSerializer(user).data,
-            'tokens': {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
         }, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -52,10 +57,8 @@ def login(request):
             refresh = RefreshToken.for_user(user)
             return Response({
                 'user': UserSerializer(user).data,
-                'tokens': {
-                    'refresh': str(refresh),
-                    'access': str(refresh.access_token),
-                }
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
             }, status=status.HTTP_200_OK)
         return Response(
             {'error': 'Invalid credentials'}, 
@@ -91,7 +94,7 @@ class UserListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        # Only admins can see all users
-        if self.request.user.is_admin:
+        # Only admins (staff/superusers) can see all users
+        if self.request.user.is_staff or self.request.user.is_superuser:
             return User.objects.all()
         return User.objects.none()

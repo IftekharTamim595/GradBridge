@@ -4,10 +4,9 @@ const apiClient = axios.create({
     baseURL: 'http://localhost:8000/api',
 })
 
-// Attach token on every request - only if valid
+// Attach token on every request
 apiClient.interceptors.request.use((config) => {
     const token = localStorage.getItem('authToken')
-    // Validate token is not null, undefined, or string representations of these
     if (token && token !== 'undefined' && token !== 'null' && token.trim() !== '') {
         config.headers.Authorization = `Bearer ${token}`
     } else {
@@ -16,34 +15,97 @@ apiClient.interceptors.request.use((config) => {
     return config
 })
 
-// Response interceptor to handle 401s and token errors
+// Track if we're currently refreshing to avoid multiple refresh calls
+let isRefreshing = false
+let failedQueue = []
+
+const processQueue = (error, token = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error)
+        } else {
+            prom.resolve(token)
+        }
+    })
+    failedQueue = []
+}
+
+// Response interceptor to handle 401s with token refresh
 apiClient.interceptors.response.use(
     (response) => response,
-    (error) => {
-        // Handle 401 Unauthorized - auto logout and redirect
-        if (error.response?.status === 401) {
-            console.warn('Unauthorized access (401). Session expired or invalid token.');
+    async (error) => {
+        const originalRequest = error.config
 
-            // Only redirect if not already on login/register pages to avoid loops
-            const currentPath = window.location.pathname;
-            if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
-                // Clear all auth data
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('refreshToken');
-                localStorage.removeItem('user');
+        // Handle 401 Unauthorized
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            // Don't retry auth endpoints
+            if (originalRequest.url?.includes('/auth/login') ||
+                originalRequest.url?.includes('/auth/register') ||
+                originalRequest.url?.includes('/auth/google')) {
+                return Promise.reject(error)
+            }
 
-                // Redirect to login
-                window.location.href = '/login';
+            if (isRefreshing) {
+                // Queue the request while refresh is in progress
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject })
+                }).then(token => {
+                    originalRequest.headers.Authorization = `Bearer ${token}`
+                    return apiClient(originalRequest)
+                }).catch(err => {
+                    return Promise.reject(err)
+                })
+            }
+
+            originalRequest._retry = true
+            isRefreshing = true
+
+            const refreshToken = localStorage.getItem('refreshToken')
+
+            if (!refreshToken) {
+                // No refresh token, logout
+                isRefreshing = false
+                processQueue(error, null)
+                localStorage.clear()
+                window.location.href = '/login'
+                return Promise.reject(error)
+            }
+
+            try {
+                // Attempt to refresh the token
+                const response = await axios.post('http://localhost:8000/api/auth/token/refresh/', {
+                    refresh: refreshToken
+                })
+
+                const { access } = response.data
+                localStorage.setItem('authToken', access)
+                isRefreshing = false
+                processQueue(null, access)
+
+                // Retry original request with new token
+                originalRequest.headers.Authorization = `Bearer ${access}`
+                return apiClient(originalRequest)
+            } catch (refreshError) {
+                // Refresh failed, logout
+                isRefreshing = false
+                processQueue(refreshError, null)
+                localStorage.clear()
+
+                const currentPath = window.location.pathname
+                if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
+                    window.location.href = '/login'
+                }
+                return Promise.reject(refreshError)
             }
         }
 
-        // Suppress "Given token not valid" alert spam
+        // Suppress token error spam
         if (error.response?.data?.code === 'token_not_valid' ||
             (error.response?.data?.detail && error.response.data.detail.includes('token'))) {
-            console.warn('Token invalid or expired:', error.response.data);
+            console.warn('Token invalid or expired:', error.response.data)
         }
 
-        return Promise.reject(error);
+        return Promise.reject(error)
     }
 )
 

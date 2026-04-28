@@ -7,32 +7,50 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
+        // ── Brand tokens used in JSX ──────────────────────
+        brand: {
+          bg:            '#FAFAFA',
+          surface:       '#FFFFFF',
+          alt:           '#F1F5F9',
+          border:        '#E2E8F0',
+          primary:       '#0052FF',
+          primaryHover:  '#0041CC',
+          primarySoft:   '#EFF4FF',
+          success:       '#22C55E',
+          successSoft:   '#F0FDF4',
+          textMain:      '#0F172A',
+          textSecondary: '#64748B',
+          textMuted:     '#94A3B8',
         },
-        dark: {
-          bg: '#0f172a', // slate-900
-          surface: '#1e293b', // slate-800
-          card: '#334155', // slate-700
-          border: '#475569', // slate-600
-        },
+        // ── Alias for convenience ─────────────────────────
         accent: {
-          blue: '#3b82f6',
-          indigo: '#6366f1',
-          emerald: '#10b981',
-        }
+          DEFAULT: '#0052FF',
+          light:   '#4D7CFF',
+          soft:    '#EFF4FF',
+        },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        heading: ['Calistoga', 'Georgia', 'serif'],
+        sans:    ['Inter', 'system-ui', 'sans-serif'],
+        mono:    ['JetBrains Mono', 'Fira Code', 'monospace'],
+      },
+      borderRadius: {
+        '2xl': '1rem',
+        '3xl': '1.5rem',
+      },
+      boxShadow: {
+        accent: '0 4px 16px rgba(0, 82, 255, 0.20)',
+        card:   '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
+        lift:   '0 8px 24px rgba(0,0,0,0.08)',
+      },
+      animation: {
+        'fade-in-up': 'fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+      },
+      keyframes: {
+        fadeInUp: {
+          '0%':   { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
       },
     },
   },

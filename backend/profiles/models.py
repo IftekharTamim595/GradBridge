@@ -68,13 +68,16 @@ class StudentProfile(models.Model):
     visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES, default='public')
     
     # Location
-    city = models.CharField(max_length=100, blank=True)
-    country = models.CharField(max_length=100, blank=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    country = models.CharField(max_length=100, blank=True, null=True)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     
     # Hiring availability
     available_for_hire = models.BooleanField(default=False)
+    
+    # Profile Scoring Breakdown
+    profile_breakdown = models.JSONField(default=dict, blank=True)
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -96,42 +99,198 @@ class StudentProfile(models.Model):
     
     def calculate_profile_strength(self):
         """
-        Calculate profile strength based on completeness.
+        Calculate profile strength based on strict 100-point gamification system.
         """
-        score = 0
-        max_score = 100
+        breakdown = {
+            'education': 0,
+            'cv': 0,
+            'skills': 0,
+            'projects': 0,
+            'experience': 0,
+            'profile': 0,
+            'community': 0
+        }
+        missing = []
         
-        # Education (30 points)
+        # 1. Education (Max 10)
         if self.university:
-            score += 10
+            breakdown['education'] += 5
+        else:
+            missing.append("Add university to gain +5 points")
+            
         if self.degree:
-            score += 10
+            breakdown['education'] += 3
+        else:
+            missing.append("Add degree/department (+3 points)")
+            
         if self.graduation_year:
-            score += 10
-        
-        # Skills (20 points)
-        if self.skills.exists():
-            score += min(20, self.skills.count() * 2)
-        
-        # Resume (20 points)
-        if self.resume:
-            score += 20
-        
-        # Projects (20 points) - calculated from projects app
+            breakdown['education'] += 2
+        else:
+            missing.append("Add graduation year (+2 points)")
+            
+        # 2. CV / Resume (Max 20)
+        has_skills = self.skills.exists()
         from projects.models import Project
-        project_count = Project.objects.filter(student_profile=self).count()
-        if project_count > 0:
-            score += min(20, project_count * 5)
+        has_projects = Project.objects.filter(student_profile=self).exists()
         
-        # Additional info (10 points)
+        if self.resume:
+            breakdown['cv'] += 10
+            # Simulating parsing success based on profile completion
+            if has_skills:
+                breakdown['cv'] += 5
+            else:
+                missing.append("Add skills to improve resume parsing (+5 points)")
+            if has_projects:
+                breakdown['cv'] += 5
+            else:
+                missing.append("Add projects for structured sections (+5 points)")
+        else:
+            missing.append("Upload CV/Resume to gain +10 points")
+            
+        # 3. Skills (Max 20)
+        skill_count = self.skills.count()
+        if skill_count >= 10:
+            breakdown['skills'] += 15
+        elif skill_count >= 5:
+            breakdown['skills'] += 10
+            missing.append("Add 10+ skills (+5 points)")
+        elif skill_count > 0:
+            breakdown['skills'] += 5
+            missing.append(f"Add at least 5 skills (+10 points)")
+        else:
+            missing.append("Add at least 5 skills to gain +10 points")
+            
+        categories = set(self.skills.values_list('category', flat=True).exclude(category=''))
+        if len(categories) >= 2:
+            breakdown['skills'] += 5
+        elif skill_count > 0:
+            missing.append("Add skills from multiple categories (+5 points)")
+            
+        # 4. Projects (Max 20)
+        projects = Project.objects.filter(student_profile=self)
+        proj_count = projects.count()
+        if proj_count >= 2:
+            breakdown['projects'] += 10
+        elif proj_count == 1:
+            breakdown['projects'] += 5
+            missing.append("Add 2+ projects (+5 points)")
+        else:
+            missing.append("Add 1 project to gain +5 points")
+            
+        if proj_count > 0:
+            has_desc = any(p.description for p in projects)
+            if has_desc:
+                breakdown['projects'] += 5
+            else:
+                missing.append("Add description to projects (+5 points)")
+                
+            has_links = any(p.github_link or p.live_link for p in projects)
+            if has_links:
+                breakdown['projects'] += 5
+            else:
+                missing.append("Add GitHub/demo links to projects (+5 points)")
+            
+        # 5. Experience (Max 10)
+        experiences = self.experiences.all()
+        has_internship = any(e.exp_type in ['internship', 'job'] for e in experiences)
+        has_leadership = any(e.exp_type in ['teaching', 'volunteering', 'leadership'] for e in experiences)
+        
+        if has_internship:
+            breakdown['experience'] += 5
+        else:
+            missing.append("Add internship/job experience (+5 points)")
+            
+        if has_leadership:
+            breakdown['experience'] += 5
+        else:
+            missing.append("Add teaching/leadership experience (+5 points)")
+            
+        # 6. Profile Completion (Max 10)
+        if self.user.profile_photo:
+            breakdown['profile'] += 2
+        else:
+            missing.append("Upload profile picture (+2 points)")
+            
         if self.bio:
-            score += 5
-        if self.linkedin_url or self.github_url or self.portfolio_url:
-            score += 5
+            breakdown['profile'] += 3
+        else:
+            missing.append("Complete profile bio (+3 points)")
+            
+        if self.visibility == 'public':
+            breakdown['profile'] += 2
+        else:
+            missing.append("Make profile public (+2 points)")
+            
+        if self.user.last_login:
+            breakdown['profile'] += 3
+            
+        # 7. Community (Max 10)
+        try:
+            from community.models import Post
+            post_count = Post.objects.filter(author=self.user).count()
+            if post_count > 0:
+                breakdown['community'] += 3
+            else:
+                missing.append("Create a community post (+3 points)")
+                
+            # Simulate comments/interactions for now
+            if post_count >= 2:
+                breakdown['community'] += 3
+            else:
+                missing.append("Engage with community comments (+3 points)")
+                
+            from mentorship.models import MentorshipRequest
+            mentor_reqs = MentorshipRequest.objects.filter(student_profile=self).count()
+            if mentor_reqs > 0:
+                breakdown['community'] += 4
+            else:
+                missing.append("Request alumni mentorship (+4 points)")
+        except ImportError:
+            pass
+            
+        total_score = sum(breakdown.values())
         
-        self.profile_strength = min(100, score)
+        result = {
+            "total_score": min(100, total_score),
+            "breakdown": breakdown,
+            "missing": missing
+        }
+        
+        self.profile_strength = result['total_score']
+        self.profile_breakdown = result
         self.save()
-        return self.profile_strength
+        return result
+
+class Experience(models.Model):
+    """
+    Student experience (internships, volunteering, etc).
+    """
+    EXP_TYPE_CHOICES = [
+        ('internship', 'Internship'),
+        ('job', 'Full-time Job'),
+        ('part_time', 'Part-time Job'),
+        ('teaching', 'Teaching/TA'),
+        ('volunteering', 'Volunteering'),
+        ('leadership', 'Leadership/Club'),
+    ]
+    student_profile = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='experiences')
+    title = models.CharField(max_length=200)
+    company = models.CharField(max_length=200)
+    exp_type = models.CharField(max_length=50, choices=EXP_TYPE_CHOICES, default='internship')
+    location = models.CharField(max_length=200, blank=True)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    is_current = models.BooleanField(default=False)
+    description = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'experiences'
+        ordering = ['-start_date']
+        
+    def __str__(self):
+        return f"{self.student_profile.user.email} - {self.title} at {self.company}"
 
 
 class AlumniProfile(models.Model):
@@ -141,6 +300,7 @@ class AlumniProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='alumni_profile')
     
     # Professional info
+    profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
     current_company = models.CharField(max_length=200, blank=True)
     current_position = models.CharField(max_length=200, blank=True)
     industry = models.CharField(max_length=100, blank=True)

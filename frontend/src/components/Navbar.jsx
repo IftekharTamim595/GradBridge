@@ -3,51 +3,42 @@ import apiClient from '../api/apiClient'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { motion } from 'framer-motion'
-import { Bell, User, LogOut, Menu, X, Sparkles } from 'lucide-react'
+import { Bell, Search, Sparkles } from 'lucide-react'
 import AIInsights from './AIInsights'
+import SearchOverlay from './SearchOverlay'
 
 const Navbar = () => {
-  const { isAuthenticated, user, logout } = useAuth()
-  const navigate = useNavigate()
+  const { isAuthenticated, user } = useAuth()
   const location = useLocation()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
   const [aiInsightsOpen, setAIInsightsOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
-  // Basic polling for notifications (could be replaced by WebSocket)
+  // Basic polling for notifications
   useEffect(() => {
-    // Only fetch notifications when auth is ready and user is authenticated
-    if (!isAuthenticated || !user) return;
-
+    if (!isAuthenticated || !user) return
     const fetchNotifications = async () => {
       try {
         const response = await apiClient.get('/notifications/')
         setNotifications(response.data.results || response.data)
       } catch (e) {
-        // Silent fail for notifications
-        console.warn("Failed to fetch notifications", e);
+        console.warn('Failed to fetch notifications', e)
       }
     }
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
-    return () => clearInterval(interval);
-  }, [isAuthenticated, user]);
+    fetchNotifications()
+    const interval = setInterval(fetchNotifications, 30000)
+    return () => clearInterval(interval)
+  }, [isAuthenticated, user])
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const unreadCount = notifications.filter(n => !n.is_read).length
 
   const markAllRead = async () => {
     try {
       await apiClient.post('/notifications/mark_all_read/')
-      setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+      setNotifications(notifications.map(n => ({ ...n, is_read: true })))
     } catch (e) { console.error(e) }
-  }
-
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-    setProfileDropdownOpen(false)
   }
 
   const getDashboardLink = () => {
@@ -56,276 +47,160 @@ const Navbar = () => {
     return `/${user.role}/dashboard`
   }
 
-  // Build navigation links based on user role
-  const getNavLinks = () => {
-    const links = [{ name: 'Home', path: '/' }]
+  // Public pages — hide on authenticated layouts (sidebar handles nav)
+  const isPublicPage = ['/', '/login', '/register', '/hire', '/explore'].includes(location.pathname)
+  const showNav = !isAuthenticated || isPublicPage
 
-    if (isAuthenticated && user) {
-      if (user.role === 'student') {
-        links.push(
-          { name: 'Explore Alumni', path: '/alumni/search' },
-          { name: 'Messages', path: '/messages' },
-          { name: 'Community', path: '/community' },
-          { name: 'Hire', path: '/hire' },
-          { name: 'AI Insights', path: '#', action: () => setAIInsightsOpen(true) }
-        )
-      } else if (user.role === 'alumni') {
-        links.push(
-          { name: 'Explore Students', path: '/students/search' },
-          { name: 'Messages', path: '/messages' },
-          { name: 'Community', path: '/community' },
-          { name: 'Hire', path: '/hire' },
-          { name: 'AI Insights', path: '#', action: () => setAIInsightsOpen(true) }
-        )
-      } else if (user.role === 'external') {
-        links.push(
-          { name: 'Hire', path: '/hire' },
-          { name: 'Messages', path: '/messages' },
-          { name: 'AI Insights', path: '#', action: () => setAIInsightsOpen(true) }
-        )
-      } else if (user.role === 'admin') {
-        links.push(
-          { name: 'Explore Alumni', path: '/alumni/search' },
-          { name: 'Explore Students', path: '/students/search' },
-          { name: 'Messages', path: '/messages' },
-          { name: 'Community', path: '/community' },
-          { name: 'Hire', path: '/hire' },
-          { name: 'AI Insights', path: '#', action: () => setAIInsightsOpen(true) },
-          { name: 'Analytics', path: '/admin/dashboard' }
-        )
+  // Shortcut for search
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(true)
       }
-    } else {
-      // Not authenticated
-      links.push(
-        { name: 'Hire', path: '/hire' },
-        { name: 'AI Insights', path: '#', action: () => setAIInsightsOpen(true) }
-      )
     }
-
-    return links
-  }
-
-  const navLinks = getNavLinks()
-  const isActive = (path) => location.pathname === path
-
-  const NavLink = ({ link }) => {
-    if (link.action) {
-      return (
-        <button
-          onClick={link.action}
-          className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-300 hover:text-white hover:bg-slate-800 flex items-center space-x-1"
-        >
-          <Sparkles size={16} />
-          <span>{link.name}</span>
-        </button>
-      )
-    }
-    return (
-      <Link
-        to={link.path}
-        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive(link.path)
-          ? 'bg-indigo-600 text-white'
-          : 'text-slate-300 hover:text-white hover:bg-slate-800'
-          }`}
-      >
-        {link.name}
-      </Link>
-    )
-  }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <>
       <motion.nav
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 shadow-lg"
+        initial={{ y: -60, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.35 }}
+        className="fixed top-0 left-0 right-0 z-50 h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <Link to={getDashboardLink()} className="flex items-center space-x-2 group">
-              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">GB</span>
-              </div>
-              <span className="text-xl font-bold text-white group-hover:text-indigo-400 transition-colors">
-                GradBridge
-              </span>
-            </Link>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-4">
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-1">
-              {navLinks.map((link, index) => (
-                <NavLink key={index} link={link} />
-              ))}
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
+            <div className="relative">
+              <img 
+                src="/logo.png" 
+                alt="GradBridge Logo" 
+                className="w-9 h-9 object-contain group-hover:scale-105 transition-transform duration-300" 
+              />
+              <div className="absolute inset-0 bg-[#0052FF]/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </div>
+            <span className="font-heading text-xl text-slate-900 tracking-tight">
+              GradBridge
+            </span>
+          </Link>
 
-            {/* Right Side */}
-            <div className="flex items-center space-x-4">
-              {isAuthenticated ? (
-                <>
-                  <div className="relative">
-                    <button
-                      onClick={() => setNotificationsOpen(!notificationsOpen)}
-                      className="relative p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
-                    >
-                      <Bell size={20} />
-                      {unreadCount > 0 && (
-                        <span className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full"></span>
-                      )}
-                    </button>
-
-                    {notificationsOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="absolute right-0 mt-2 w-80 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden z-50"
-                      >
-                        <div className="p-3 border-b border-slate-700 flex justify-between items-center">
-                          <h3 className="font-semibold text-white text-sm">Notifications</h3>
-                          <button onClick={markAllRead} className="text-xs text-indigo-400 hover:text-indigo-300">
-                            Mark all read
-                          </button>
-                        </div>
-                        <div className="max-h-80 overflow-y-auto">
-                          {notifications.length > 0 ? (
-                            notifications.map(notif => (
-                              <Link
-                                key={notif.id}
-                                to={notif.related_link || '#'}
-                                onClick={() => setNotificationsOpen(false)}
-                                className={`block p-3 border-b border-slate-700/50 hover:bg-slate-700 transition-colors ${!notif.is_read ? 'bg-slate-700/30' : ''}`}
-                              >
-                                <p className="text-sm text-slate-300 mb-1">{notif.message}</p>
-                                <span className="text-xs text-slate-500">{new Date(notif.created_at).toLocaleDateString()}</span>
-                              </Link>
-                            ))
-                          ) : (
-                            <div className="p-4 text-center text-slate-500 text-sm">
-                              No notifications
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-
-                  <div className="relative">
-                    <button
-                      onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                      className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-800 transition-all"
-                    >
-                      <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center">
-                        <User size={16} className="text-white" />
-                      </div>
-                      <span className="hidden sm:block text-sm text-slate-300">{user?.email}</span>
-                    </button>
-
-                    {profileDropdownOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden"
-                      >
-                        {user?.role !== 'external' && (
-                          <>
-                            <Link
-                              to={`/${user?.role}/profile`}
-                              onClick={() => setProfileDropdownOpen(false)}
-                              className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
-                            >
-                              Profile Update
-                            </Link>
-                            <Link
-                              to={getDashboardLink()}
-                              onClick={() => setProfileDropdownOpen(false)}
-                              className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
-                            >
-                              Dashboard
-                            </Link>
-                          </>
-                        )}
-                        <button
-                          onClick={handleLogout}
-                          className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700 transition-colors flex items-center space-x-2"
-                        >
-                          <LogOut size={14} />
-                          <span>Logout</span>
-                        </button>
-                      </motion.div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <Link
-                    to="/login"
-                    className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="btn-primary text-sm"
-                  >
-                    Register
-                  </Link>
-                </div>
-              )}
-
-              {/* Mobile Menu Button */}
+          {/* Search — shown on authenticated pages */}
+          {isAuthenticated && (
+            <div className="hidden md:flex flex-1 max-w-sm">
               <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
+                onClick={() => setSearchOpen(true)}
+                className="w-full flex items-center justify-between px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 hover:border-slate-300 transition-all text-slate-400 group"
               >
-                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                <div className="flex items-center gap-2">
+                  <Search size={15} className="group-hover:text-brand-primary transition-colors" />
+                  <span>Search anything…</span>
+                </div>
+                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-white border border-slate-200 rounded-md text-[10px] font-bold">
+                  <span className="opacity-50">CTRL</span> K
+                </div>
               </button>
             </div>
+          )}
+
+          {/* Right side */}
+          <div className="flex items-center gap-2">
+
+            {/* Public nav links */}
+            {showNav && !isAuthenticated && (
+              <div className="hidden md:flex items-center gap-1">
+                <Link to="/" className="btn-ghost text-sm">Home</Link>
+                <Link to="/hire" className="btn-ghost text-sm">Hire</Link>
+                <button
+                  onClick={() => setAIInsightsOpen(true)}
+                  className="btn-ghost text-sm"
+                >
+                  <Sparkles size={15} />
+                  AI Insights
+                </button>
+              </div>
+            )}
+
+            {isAuthenticated ? (
+              <>
+                {/* AI Insights */}
+                <button
+                  onClick={() => setAIInsightsOpen(true)}
+                  className="btn-ghost p-2 rounded-xl"
+                  title="AI Insights"
+                >
+                  <Sparkles size={18} />
+                </button>
+
+                {/* Notifications */}
+                <div className="relative">
+                  <button
+                    onClick={() => setNotificationsOpen(!notificationsOpen)}
+                    className="relative btn-ghost p-2 rounded-xl"
+                    title="Notifications"
+                  >
+                    <Bell size={18} />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#0052FF] rounded-full" />
+                    )}
+                  </button>
+
+                  {notificationsOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-lift overflow-hidden z-50"
+                    >
+                      <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center">
+                        <h3 className="font-semibold text-slate-800 text-sm">Notifications</h3>
+                        {unreadCount > 0 && (
+                          <button onClick={markAllRead} className="text-xs text-[#0052FF] hover:underline">
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
+                        {notifications.length > 0 ? notifications.map(notif => (
+                          <Link
+                            key={notif.id}
+                            to={notif.related_link || '#'}
+                            onClick={() => setNotificationsOpen(false)}
+                            className={`block px-4 py-3 hover:bg-slate-50 transition-colors ${!notif.is_read ? 'bg-blue-50/50' : ''}`}
+                          >
+                            <p className="text-sm text-slate-700">{notif.message}</p>
+                            <span className="text-xs text-slate-400 mt-0.5 block">
+                              {new Date(notif.created_at).toLocaleDateString()}
+                            </span>
+                          </Link>
+                        )) : (
+                          <div className="px-4 py-6 text-center text-slate-400 text-sm">
+                            No notifications
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link to="/login" className="btn-ghost text-sm px-4 py-2">Log in</Link>
+                <Link to="/register" className="btn-primary text-sm px-4 py-2.5">Get started</Link>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-slate-800 bg-slate-900"
-          >
-            <div className="px-4 py-4 space-y-2">
-              {navLinks.map((link, index) => (
-                link.action ? (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      link.action()
-                      setMobileMenuOpen(false)
-                    }}
-                    className="block w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all"
-                  >
-                    {link.name}
-                  </button>
-                ) : (
-                  <Link
-                    key={index}
-                    to={link.path}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all ${isActive(link.path)
-                      ? 'bg-indigo-600 text-white'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                      }`}
-                  >
-                    {link.name}
-                  </Link>
-                )
-              ))}
-            </div>
-          </motion.div>
-        )}
       </motion.nav>
 
-      {/* AI Insights Panel */}
       {aiInsightsOpen && (
         <AIInsights isOpen={aiInsightsOpen} onClose={() => setAIInsightsOpen(false)} />
+      )}
+
+      {searchOpen && (
+        <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
       )}
     </>
   )

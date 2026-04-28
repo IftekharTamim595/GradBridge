@@ -40,11 +40,18 @@ class UserSerializer(serializers.ModelSerializer):
     """
     Serializer for user details.
     """
+    profile_picture = serializers.ImageField(source='profile_photo', required=False)
+
     class Meta:
         model = User
         fields = ('id', 'email', 'username', 'role', 'first_name', 'last_name', 
-                  'is_verified', 'created_at', 'updated_at', 'profile_photo')
+                  'is_verified', 'created_at', 'updated_at', 'profile_photo', 'profile_picture')
         read_only_fields = ('id', 'is_verified', 'created_at', 'updated_at')
+
+    def validate_profile_picture(self, value):
+        if value:
+            validate_image(value)
+        return value
 
     def validate_profile_photo(self, value):
         if value:

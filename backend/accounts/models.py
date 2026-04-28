@@ -12,11 +12,10 @@ class User(AbstractUser):
     ROLE_CHOICES = [
         ('student', 'Student'),
         ('alumni', 'Alumni'),
-        ('external', 'External User'),
-        ('admin', 'Admin'),
+        ('external', 'External User'),  # Recruiters
     ]
     
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student', blank=True)
     email = models.EmailField(unique=True)
     profile_photo = models.ImageField(upload_to='profile_photos/', null=True, blank=True)
     is_verified = models.BooleanField(default=False)
@@ -46,9 +45,6 @@ class User(AbstractUser):
         return self.role == 'alumni'
     
     @property
-    def is_admin(self):
-        return self.role == 'admin'
-    
-    @property
     def is_external(self):
+        """Check if user is external/recruiter. Admin status checked via is_staff/is_superuser."""
         return self.role == 'external'

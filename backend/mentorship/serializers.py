@@ -14,13 +14,8 @@ class MentorshipRequestSerializer(serializers.ModelSerializer):
     """
     student_profile = StudentProfileSerializer(read_only=True)
     alumni_profile = AlumniProfileSerializer(read_only=True)
-    student_profile_id = serializers.PrimaryKeyRelatedField(
-        queryset=StudentProfile.objects.none(), # Fixed: changed from None
-        source='student_profile',
-        write_only=True
-    )
-    alumni_profile_id = serializers.PrimaryKeyRelatedField(
-        queryset=AlumniProfile.objects.none(), # Fixed: changed from None
+    receiver_id = serializers.PrimaryKeyRelatedField(
+        queryset=AlumniProfile.objects.all(),
         source='alumni_profile',
         write_only=True
     )
@@ -28,18 +23,10 @@ class MentorshipRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = MentorshipRequest
         fields = (
-            'id', 'student_profile', 'student_profile_id', 'alumni_profile', 'alumni_profile_id',
+            'id', 'student_profile', 'alumni_profile', 'receiver_id',
             'message', 'status', 'created_at', 'updated_at', 'responded_at'
         )
         read_only_fields = ('id', 'status', 'created_at', 'updated_at', 'responded_at')
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        request = self.context.get('request')
-        if request and request.user:
-            if getattr(request.user, 'is_student', False):
-                self.fields['student_profile_id'].queryset = StudentProfile.objects.filter(user=request.user)
-            self.fields['alumni_profile_id'].queryset = AlumniProfile.objects.all()
 
 
 class ReferralRequestSerializer(serializers.ModelSerializer):

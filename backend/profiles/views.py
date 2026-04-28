@@ -7,17 +7,28 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
-from .models import StudentProfile, AlumniProfile, Skill, SkillGap, Certificate
+from .models import StudentProfile, AlumniProfile, Skill, SkillGap, Certificate, Experience
 from .serializers import (
     StudentProfileSerializer, AlumniProfileSerializer,
-    SkillSerializer, SkillGapSerializer, CertificateSerializer
+    SkillSerializer, SkillGapSerializer, CertificateSerializer,
+    ExperienceSerializer
 )
 from accounts.permissions import IsStudent, IsAlumni
 from .permissions import IsOwnerOrReadOnly
+from rest_framework.views import APIView
 
-
+class ProfileScoreView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        if not request.user.is_student:
+            return Response({"error": "Only students have profile scores"}, status=status.HTTP_400_BAD_REQUEST)
+        profile, _ = StudentProfile.objects.get_or_create(user=request.user)
+        result = profile.calculate_profile_strength()
+        return Response(result)
 
 class SkillViewSet(viewsets.ModelViewSet):
+# ... existing SkillViewSet ...
     """
     ViewSet for Skills (read/write for all authenticated users).
     """
@@ -55,6 +66,32 @@ class CertificateViewSet(viewsets.ModelViewSet):
         serializer.save(student_profile=profile)
 
 
+class ExperienceViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Experience entries.
+    """
+    serializer_class = ExperienceSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+
+    def get_queryset(self):
+        return Experience.objects.filter(student_profile__user=self.request.user)
+
+    def perform_create(self, serializer):
+        profile = get_object_or_404(StudentProfile, user=self.request.user)
+        serializer.save(student_profile=profile)
+        # Recalculate strength after adding experience
+        profile.calculate_profile_strength()
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        instance.student_profile.calculate_profile_strength()
+
+    def perform_destroy(self, instance):
+        profile = instance.student_profile
+        instance.delete()
+        profile.calculate_profile_strength()
+
+
 class StudentProfileViewSet(viewsets.ModelViewSet):
     """
     ViewSet for StudentProfile.
@@ -68,15 +105,27 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
         Get or update the current user's profile.
         """
         profile, created = StudentProfile.objects.get_or_create(user=request.user)
+        
         if request.method == 'GET':
+            profile.calculate_profile_strength() # Update breakdown real-time
             serializer = self.get_serializer(profile)
             return Response(serializer.data)
         
         serializer = self.get_serializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            profile.calculate_profile_strength() # Refresh after update
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'])
+    def score(self, request):
+        """
+        Get specifically the gamification score breakdown.
+        """
+        profile, _ = StudentProfile.objects.get_or_create(user=request.user)
+        result = profile.calculate_profile_strength()
+        return Response(result)
 
     
     def get_queryset(self):
@@ -88,7 +137,7 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
             return queryset.filter(
                 Q(user=user) | Q(visibility='public')
             )
-        elif user.is_alumni or user.is_admin:
+        elif user.is_alumni or user.is_staff:
             # Alumni and admins can see all profiles
             return queryset
         elif user.is_authenticated:
@@ -110,7 +159,7 @@ class StudentProfileViewSet(viewsets.ModelViewSet):
                     {'detail': 'This profile is private.'},
                     status=status.HTTP_403_FORBIDDEN
                 )
-            if not (obj.user == user or user.is_admin):
+            if not (obj.user == user or user.is_staff):
                 return Response(
                     {'detail': 'You do not have permission to view this profile.'},
                     status=status.HTTP_403_FORBIDDEN
@@ -280,7 +329,7 @@ class AlumniProfileViewSet(viewsets.ModelViewSet):
         if obj.visibility == 'private':
             if not user.is_authenticated:
                  return Response({'detail': 'Private profile.'}, status=status.HTTP_403_FORBIDDEN)
-            if not (obj.user == user or user.is_admin):
+            if not (obj.user == user or user.is_staff):
                 return Response(
                     {'detail': 'You do not have permission to view this profile.'},
                     status=status.HTTP_403_FORBIDDEN

@@ -79,29 +79,29 @@ const ChatWindow = () => {
     if (!isOpen) return null
 
     return (
-        <div className={`fixed bottom-0 right-4 z-50 flex flex-col bg-slate-800 border-x border-t border-slate-700 rounded-t-lg shadow-2xl transition-all duration-300 ${isMinimized ? 'h-12 w-64' : 'h-[450px] w-80 md:w-96'}`}>
+        <div className={`fixed bottom-0 right-4 z-50 flex flex-col bg-white border border-brand-border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-x border-t border-brand-border rounded-t-lg shadow-2xl transition-all duration-300 ${isMinimized ? 'h-12 w-64' : 'h-[450px] w-80 md:w-96'}`}>
 
             {/* Header */}
             <div
-                className="flex items-center justify-between px-4 py-3 bg-indigo-600 rounded-t-lg cursor-pointer hover:bg-indigo-700 transition-colors"
+                className="flex items-center justify-between px-4 py-3 bg-brand-primary hover:bg-brand-primaryHover text-white hover:scale-[1.03] active:scale-[0.97] shadow-sm transition-all duration-200 rounded-t-lg cursor-pointer hover:bg-indigo-700 transition-colors"
                 onClick={minimizeChat}
             >
                 <div className="flex items-center space-x-2">
                     <div className="relative">
                         <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full absolute bottom-0 right-0 border border-indigo-600"></div>
-                        <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-indigo-700 font-bold text-xs">
+                        <div className="w-8 h-8 bg-brand-alt rounded-full flex items-center justify-center text-indigo-700 font-bold text-xs">
                             {activeUser?.first_name?.[0]}{activeUser?.last_name?.[0]}
                         </div>
                     </div>
-                    <span className="font-semibold text-white truncate max-w-[120px]">
+                    <span className="font-semibold text-brand-textMain truncate max-w-[120px]">
                         {activeUser?.first_name} {activeUser?.last_name}
                     </span>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <button onClick={(e) => { e.stopPropagation(); minimizeChat(); }} className="text-indigo-200 hover:text-white">
+                    <button onClick={(e) => { e.stopPropagation(); minimizeChat(); }} className="text-indigo-200 hover:text-brand-primary">
                         {isMinimized ? <Maximize2 size={16} /> : <Minus size={16} />}
                     </button>
-                    <button onClick={(e) => { e.stopPropagation(); closeChat(); }} className="text-indigo-200 hover:text-white">
+                    <button onClick={(e) => { e.stopPropagation(); closeChat(); }} className="text-indigo-200 hover:text-brand-primary">
                         <X size={16} />
                     </button>
                 </div>
@@ -110,15 +110,15 @@ const ChatWindow = () => {
             {/* Body (Hidden if minimized) */}
             {!isMinimized && (
                 <>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-900/90 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white scrollbar-thin scrollbar-thumb-brand-border scrollbar-track-transparent">
                         {loading ? (
                             <div className="flex justify-center items-center h-full">
-                                <Loader className="animate-spin text-indigo-500" />
+                                <Loader className="animate-spin text-brand-primary" />
                             </div>
                         ) : (
                             <>
                                 {messages.length === 0 && (
-                                    <p className="text-center text-slate-500 text-sm mt-4">No messages yet. Say hi!</p>
+                                    <p className="text-center text-brand-textMuted text-sm mt-4">No messages yet. Say hi!</p>
                                 )}
                                 {messages.map((msg, idx) => {
                                     // Check if sender is current user.
@@ -131,8 +131,8 @@ const ChatWindow = () => {
                                         <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                             <div
                                                 className={`max-w-[75%] px-3 py-2 rounded-xl text-sm ${isMe
-                                                    ? 'bg-indigo-600 text-white rounded-br-none'
-                                                    : 'bg-slate-700 text-slate-200 rounded-bl-none'
+                                                    ? 'bg-brand-primary hover:bg-brand-primaryHover text-white hover:scale-[1.03] active:scale-[0.97] shadow-sm transition-all duration-200 text-white rounded-br-none'
+                                                    : 'bg-brand-alt text-brand-textMain rounded-bl-none'
                                                     }`}
                                             >
                                                 <p>{msg.content}</p>
@@ -146,26 +146,26 @@ const ChatWindow = () => {
                     </div>
 
                     {/* Input Area */}
-                    <form onSubmit={handleSend} className="p-3 bg-slate-800 border-t border-slate-700">
+                    <form onSubmit={handleSend} className="p-3 bg-white border border-brand-border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-t border-brand-border">
                         <div className="relative">
                             <input
                                 type="text"
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
                                 placeholder="Type a message..."
-                                className="w-full pl-4 pr-10 py-2 bg-slate-700 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-400 text-sm"
+                                className="w-full pl-4 pr-10 py-2 bg-brand-alt text-brand-textMain rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-400 text-sm"
                                 disabled={!isConnected}
                             />
                             <button
                                 type="submit"
                                 disabled={!inputText.trim() || !isConnected}
-                                className="absolute right-1 top-1 p-1.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 transition-colors"
+                                className="absolute right-1 top-1 p-1.5 bg-brand-primary hover:bg-brand-primaryHover text-white hover:scale-[1.03] active:scale-[0.97] shadow-sm transition-all duration-200 text-white rounded-full hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 transition-colors"
                             >
                                 <Send size={14} />
                             </button>
                         </div>
                         {!isConnected && !loading && (
-                            <p className="text-[10px] text-red-400 mt-1 text-center">Disconnected</p>
+                            <p className="text-[10px] text-red-600 mt-1 text-center">Disconnected</p>
                         )}
                     </form>
                 </>

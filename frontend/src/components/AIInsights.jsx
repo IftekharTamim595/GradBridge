@@ -1,71 +1,43 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, TrendingUp, Award, Target, Sparkles, Loader } from 'lucide-react'
+import { X, Sparkles, Send, Loader, Bot, User as UserIcon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import apiClient from '../api/apiClient'
+import aiApi from '../api/ai'
 
 const AIInsights = ({ isOpen, onClose }) => {
-  const { user, isAuthenticated } = useAuth()
-  const [insights, setInsights] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const { user } = useAuth()
+  const [messages, setMessages] = useState([
+    { role: 'assistant', content: `Hi ${user?.first_name || 'there'}! I'm your GradBridge AI assistant. How can I help with your career today?` }
+  ])
+  const [input, setInput] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
+  const chatEndRef = useRef(null)
 
   useEffect(() => {
-    if (isOpen && isAuthenticated && user) {
-      fetchInsights()
-    }
-  }, [isOpen, user])
+    scrollToBottom()
+  }, [messages, isTyping])
 
-  const fetchInsights = async () => {
-    setLoading(true)
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const handleSend = async (e) => {
+    e.preventDefault()
+    if (!input.trim() || isTyping) return
+
+    const userMsg = { role: 'user', content: input }
+    setMessages(prev => [...prev, userMsg])
+    setInput('')
+    setIsTyping(true)
+
     try {
-      // Placeholder - replace with actual API call
-      // For now, generate mock insights based on user role
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      if (user.role === 'student') {
-        const response = await apiClient.get('/profiles/students/')
-        const profile = response.data.results?.[0]
-        
-        setInsights({
-          profileStrength: profile?.profile_strength || 0,
-          skillGaps: [
-            { skill: 'Machine Learning', priority: 'High', reason: 'High demand in your field' },
-            { skill: 'Cloud Computing', priority: 'Medium', reason: 'Growing industry trend' },
-          ],
-          careerSuggestions: [
-            'Software Engineer',
-            'Data Scientist',
-            'Full Stack Developer',
-          ],
-          recommendations: [
-            'Complete your profile to increase visibility',
-            'Add more projects to showcase your skills',
-            'Connect with alumni in your field of interest',
-          ],
-        })
-      } else if (user.role === 'alumni') {
-        setInsights({
-          studentsMentored: 0,
-          topSkills: ['Python', 'React', 'Django'],
-          recommendations: [
-            'Review pending mentorship requests',
-            'Update your availability status',
-            'Share your expertise with students',
-          ],
-        })
-      } else {
-        setInsights({
-          message: 'AI Insights are available for registered users.',
-          recommendations: [
-            'Sign up to get personalized insights',
-            'Explore available students and alumni',
-          ],
-        })
-      }
+      const response = await aiApi.chat(input)
+      const botMsg = { role: 'assistant', content: response.data.reply }
+      setMessages(prev => [...prev, botMsg])
     } catch (error) {
-      console.error('Error fetching insights:', error)
+      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I'm having trouble connecting right now. Please try again later." }])
     } finally {
-      setLoading(false)
+      setIsTyping(false)
     }
   }
 
@@ -73,135 +45,94 @@ const AIInsights = ({ isOpen, onClose }) => {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100]"
           />
 
-          {/* Panel */}
           <motion.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full w-full max-w-md bg-slate-900 border-l border-slate-800 shadow-2xl z-50 overflow-y-auto"
+            className="fixed right-0 top-0 h-full w-full max-w-lg bg-white border-l border-slate-200 shadow-2xl z-[101] flex flex-col"
           >
-            <div className="p-6">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-indigo-600/20 rounded-lg flex items-center justify-center">
-                    <Sparkles className="text-indigo-400" size={24} />
+            {/* Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-brand-primary rounded-2xl flex items-center justify-center shadow-lg shadow-brand-primary/20">
+                  <Sparkles className="text-white" size={20} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-heading text-slate-900">Career Assistant</h2>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">AI Online</span>
                   </div>
-                  <h2 className="text-2xl font-bold text-white">AI Insights</h2>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-                >
-                  <X size={20} />
-                </button>
               </div>
+              <button onClick={onClose} className="p-2 hover:bg-white rounded-full transition-colors text-slate-400">
+                <X size={20} />
+              </button>
+            </div>
 
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader className="animate-spin text-indigo-400" size={32} />
+            {/* Chat Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {messages.map((msg, idx) => (
+                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-slate-200' : 'bg-brand-alt'}`}>
+                      {msg.role === 'user' ? <UserIcon size={14} className="text-slate-600" /> : <Bot size={14} className="text-brand-primary" />}
+                    </div>
+                    <div className={`p-4 rounded-2xl text-sm leading-relaxed ${
+                      msg.role === 'user' 
+                      ? 'bg-brand-primary text-white rounded-tr-none' 
+                      : 'bg-slate-100 text-slate-700 rounded-tl-none shadow-sm'
+                    }`}>
+                      {msg.content}
+                    </div>
+                  </div>
                 </div>
-              ) : insights ? (
-                <div className="space-y-6">
-                  {insights.profileStrength !== undefined && (
-                    <div className="card">
-                      <div className="flex items-center space-x-2 mb-4">
-                        <TrendingUp className="text-indigo-400" size={20} />
-                        <h3 className="text-lg font-semibold text-white">Profile Strength</h3>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="flex-1 bg-slate-700 rounded-full h-3">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${insights.profileStrength}%` }}
-                            className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full"
-                          />
-                        </div>
-                        <span className="text-white font-bold">{insights.profileStrength}%</span>
-                      </div>
+              ))}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="flex gap-3 max-w-[85%]">
+                    <div className="w-8 h-8 rounded-lg bg-brand-alt flex items-center justify-center shrink-0">
+                      <Bot size={14} className="text-brand-primary" />
                     </div>
-                  )}
-
-                  {insights.skillGaps && insights.skillGaps.length > 0 && (
-                    <div className="card">
-                      <div className="flex items-center space-x-2 mb-4">
-                        <Target className="text-indigo-400" size={20} />
-                        <h3 className="text-lg font-semibold text-white">Skill Gaps</h3>
-                      </div>
-                      <div className="space-y-3">
-                        {insights.skillGaps.map((gap, index) => (
-                          <div key={index} className="p-3 bg-slate-800/50 rounded-lg">
-                            <div className="flex justify-between items-start mb-1">
-                              <span className="text-white font-medium">{gap.skill}</span>
-                              <span className={`text-xs px-2 py-1 rounded ${
-                                gap.priority === 'High' ? 'bg-red-500/20 text-red-400' :
-                                gap.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                                'bg-blue-500/20 text-blue-400'
-                              }`}>
-                                {gap.priority}
-                              </span>
-                            </div>
-                            <p className="text-sm text-slate-400">{gap.reason}</p>
-                          </div>
-                        ))}
-                      </div>
+                    <div className="bg-slate-100 p-4 rounded-2xl rounded-tl-none flex gap-1">
+                      <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" />
+                      <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+                      <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0.4s]" />
                     </div>
-                  )}
-
-                  {insights.careerSuggestions && (
-                    <div className="card">
-                      <div className="flex items-center space-x-2 mb-4">
-                        <Award className="text-indigo-400" size={20} />
-                        <h3 className="text-lg font-semibold text-white">Career Suggestions</h3>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {insights.careerSuggestions.map((role, index) => (
-                          <span
-                            key={index}
-                            className="px-3 py-1 bg-indigo-600/20 text-indigo-300 text-sm rounded border border-indigo-500/30"
-                          >
-                            {role}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {insights.recommendations && (
-                    <div className="card">
-                      <h3 className="text-lg font-semibold text-white mb-4">Recommendations</h3>
-                      <ul className="space-y-2">
-                        {insights.recommendations.map((rec, index) => (
-                          <li key={index} className="flex items-start space-x-2 text-slate-300">
-                            <span className="text-indigo-400 mt-1">•</span>
-                            <span>{rec}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {insights.message && (
-                    <div className="card">
-                      <p className="text-slate-300">{insights.message}</p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-slate-400">No insights available</p>
+                  </div>
                 </div>
               )}
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Input Footer */}
+            <div className="p-6 border-t border-slate-100 bg-white">
+              <form onSubmit={handleSend} className="relative">
+                <input
+                  type="text"
+                  placeholder="Ask about career paths, resume tips..."
+                  className="w-full pl-5 pr-14 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all outline-none text-sm"
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                />
+                <button
+                  type="submit"
+                  disabled={!input.trim() || isTyping}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-brand-primary text-white rounded-xl shadow-lg shadow-brand-primary/20 disabled:opacity-50 hover:bg-brand-primaryHover transition-all"
+                >
+                  <Send size={18} />
+                </button>
+              </form>
+              <p className="text-[10px] text-center text-slate-400 mt-4">
+                Powered by GradBridge AI • Expert Career Guidance
+              </p>
             </div>
           </motion.div>
         </>

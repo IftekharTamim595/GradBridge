@@ -1,40 +1,38 @@
+"""
+Custom permissions for GradBridge.
+"""
 from rest_framework import permissions
+
 
 class IsApprovedRecruiter(permissions.BasePermission):
     """
-    Custom permission to only allow approved recruiters to access the view.
+    Permission check for recruiter approval.
+    Allows access only if user is a recruiter AND is_approved=True.
     """
+    message = "Your recruiter account is pending admin approval. Please wait for approval to access this feature."
+    
     def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        
-        # If user is admin, allow
-        if request.user.is_superuser or request.user.role == 'admin':
-            return True
-            
-        # If user is recruiter (external)
-        if request.user.role == 'external':
-            return request.user.is_approved
-            
-        return False
+        return (
+            request.user and
+            request.user.is_authenticated and
+            request.user.role == 'external' and
+            request.user.is_approved
+        )
+
 
 class IsStudent(permissions.BasePermission):
-    """
-    Custom permission to only allow students to access the view.
-    """
+    """Check if user is a student."""
     def has_permission(self, request, view):
-        return bool(request.user and request.user.is_authenticated and request.user.role == 'student')
+        return request.user and request.user.is_authenticated and request.user.role == 'student'
+
 
 class IsAlumni(permissions.BasePermission):
-    """
-    Custom permission to only allow alumni to access the view.
-    """
+    """Check if user is an alumni."""
     def has_permission(self, request, view):
-        return bool(request.user and request.user.is_authenticated and request.user.role == 'alumni')
+        return request.user and request.user.is_authenticated and request.user.role == 'alumni'
+
 
 class IsAdmin(permissions.BasePermission):
-    """
-    Custom permission to only allow admins to access the view.
-    """
+    """Check if user is an admin (staff/superuser)."""
     def has_permission(self, request, view):
-        return bool(request.user and request.user.is_authenticated and (request.user.role == 'admin' or request.user.is_superuser))
+        return request.user and request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser)

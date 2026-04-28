@@ -159,29 +159,29 @@ const Messages = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-900 pt-16 flex items-center justify-center">
-                <div className="text-slate-400">Loading...</div>
+            <div className="min-h-screen bg-brand-bg pt-16 flex items-center justify-center">
+                <div className="text-brand-textSecondary">Loading...</div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-slate-900 pt-20 pb-8 flex items-center justify-center px-4">
-            <div className="w-full max-w-[1200px] h-[calc(100vh-100px)] bg-slate-800 rounded-2xl shadow-2xl flex overflow-hidden border border-slate-700">
+        <div className="min-h-screen bg-brand-bg pt-20 pb-8 flex items-center justify-center px-4">
+            <div className="w-full max-w-[1200px] h-[calc(100vh-100px)] bg-white border border-brand-border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 rounded-2xl shadow-2xl flex overflow-hidden border border-brand-border">
 
                 {/* Sidebar - Fixed Width 350px */}
-                <div className={`${selectedConversation ? 'hidden md:flex' : 'flex'} w-full md:w-[350px] flex-col border-r border-slate-700 bg-slate-800`}>
+                <div className={`${selectedConversation ? 'hidden md:flex' : 'flex'} w-full md:w-[350px] flex-col border-r border-brand-border bg-white border border-brand-border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200`}>
                     {/* Sidebar Header */}
-                    <div className="p-4 border-b border-slate-700 shrink-0">
-                        <h2 className="text-xl font-bold text-white mb-4">Messages</h2>
+                    <div className="p-4 border-b border-brand-border shrink-0">
+                        <h2 className="text-xl font-bold text-brand-textMain mb-4">Messages</h2>
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={16} />
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-brand-textSecondary" size={16} />
                             <input
                                 type="text"
                                 placeholder="Search messages..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-slate-900/50 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+                                className="w-full bg-white border border-brand-border border border-brand-border rounded-lg pl-10 pr-4 py-2 text-sm text-brand-textMain focus:outline-none focus:border-indigo-500 transition-colors"
                             />
                         </div>
                     </div>
@@ -201,27 +201,27 @@ const Messages = () => {
                                         }}
                                         className={`p-3 mx-2 my-1 rounded-lg cursor-pointer transition-colors flex items-center space-x-3 ${isActive
                                             ? 'bg-indigo-600/20 hover:bg-indigo-600/30'
-                                            : 'hover:bg-slate-700/50'
+                                            : 'hover:bg-brand-alt'
                                             }`}
                                     >
                                         <div className="relative shrink-0">
-                                            <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center text-slate-300 font-bold text-lg select-none">
+                                            <div className="w-12 h-12 bg-brand-alt rounded-full flex items-center justify-center text-brand-textSecondary font-bold text-lg select-none">
                                                 {otherUser?.first_name?.[0]}{otherUser?.last_name?.[0]}
                                             </div>
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-baseline">
-                                                <h3 className={`text-sm font-semibold truncate ${isActive ? 'text-indigo-400' : 'text-slate-200'}`}>
+                                                <h3 className={`text-sm font-semibold truncate ${isActive ? 'text-brand-primary' : 'text-brand-textMain'}`}>
                                                     {otherUser?.first_name} {otherUser?.last_name}
                                                 </h3>
-                                                <span className="text-xs text-slate-400 shrink-0 ml-2">
+                                                <span className="text-xs text-brand-textSecondary shrink-0 ml-2">
                                                     {conversation.last_message?.created_at &&
                                                         new Date(conversation.last_message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                                                     }
                                                 </span>
                                             </div>
-                                            <p className="text-sm text-slate-400 truncate mt-0.5">
-                                                {conversation.last_message?.sender?.id === user?.id && <span className="text-slate-500">You: </span>}
+                                            <p className="text-sm text-brand-textSecondary truncate mt-0.5">
+                                                {conversation.last_message?.sender?.id === user?.id && <span className="text-brand-textMuted">You: </span>}
                                                 {conversation.last_message?.content || 'Start a conversation'}
                                             </p>
                                         </div>
@@ -229,7 +229,7 @@ const Messages = () => {
                                 )
                             })
                         ) : (
-                            <div className="p-8 text-center text-slate-500 text-sm">
+                            <div className="p-8 text-center text-brand-textMuted text-sm">
                                 <p>No conversations found</p>
                             </div>
                         )}
@@ -237,73 +237,75 @@ const Messages = () => {
                 </div>
 
                 {/* Chat Area - Flex Column */}
-                <div className={`${!selectedConversation ? 'hidden md:flex' : 'flex'} flex-1 flex-col bg-slate-900/50 min-w-0`}>
+                <div className={`${!selectedConversation ? 'hidden md:flex' : 'flex'} flex-1 flex-col bg-white border border-brand-border min-w-0`}>
                     {selectedConversation ? (
                         <>
                             {/* Chat Header */}
-                            <div className="h-16 px-6 border-b border-slate-700 flex items-center justify-between bg-slate-800 shrink-0">
+                            <div className="h-16 px-6 border-b border-brand-border flex items-center justify-between bg-white border border-brand-border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 shrink-0">
                                 <div className="flex items-center space-x-3">
                                     <button
                                         onClick={() => setSelectedConversation(null)}
-                                        className="md:hidden text-slate-400 hover:text-white mr-2"
+                                        className="md:hidden text-brand-textSecondary hover:text-brand-primary mr-2"
                                     >
                                         <ArrowLeft size={20} />
                                     </button>
-                                    <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold select-none">
+                                    <div className="w-10 h-10 bg-brand-primary hover:bg-brand-primaryHover text-white hover:scale-[1.03] active:scale-[0.97] shadow-sm transition-all duration-200 rounded-full flex items-center justify-center text-white font-bold select-none">
                                         {getOtherParticipant(selectedConversation)?.first_name?.[0]}
                                         {getOtherParticipant(selectedConversation)?.last_name?.[0]}
                                     </div>
                                     <div className="leading-tight">
-                                        <h3 className="font-bold text-white text-sm">
+                                        <h3 className="font-bold text-brand-textMain text-sm">
                                             {getOtherParticipant(selectedConversation)?.first_name} {getOtherParticipant(selectedConversation)?.last_name}
                                         </h3>
-                                        <p className="text-xs text-emerald-400 flex items-center mt-0.5">
+                                        <p className="text-xs text-brand-success flex items-center mt-0.5">
                                             <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full mr-1.5 shadow-sm shadow-emerald-400/50"></span>
                                             {isConnected ? 'Online' : 'Offline'}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center space-x-4 text-slate-400">
-                                    <button className="hover:text-indigo-400 transition-colors p-2 hover:bg-slate-700/50 rounded-full"><Phone size={20} /></button>
-                                    <button className="hover:text-indigo-400 transition-colors p-2 hover:bg-slate-700/50 rounded-full"><Video size={20} /></button>
-                                    <button className="hover:text-indigo-400 transition-colors p-2 hover:bg-slate-700/50 rounded-full"><Info size={20} /></button>
+                                <div className="flex items-center space-x-4 text-brand-textSecondary">
+                                    <button className="hover:text-indigo-400 transition-colors p-2 hover:bg-brand-alt rounded-full"><Phone size={20} /></button>
+                                    <button className="hover:text-indigo-400 transition-colors p-2 hover:bg-brand-alt rounded-full"><Video size={20} /></button>
+                                    <button className="hover:text-indigo-400 transition-colors p-2 hover:bg-brand-alt rounded-full"><Info size={20} /></button>
                                 </div>
                             </div>
 
                             {/* Messages Feed */}
                             <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                                 {messages.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-4">
-                                        <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center">
-                                            <Send size={24} className="text-slate-600" />
+                                    <div className="flex flex-col items-center justify-center h-full text-brand-textMuted space-y-4">
+                                        <div className="w-16 h-16 bg-white border border-brand-border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 rounded-full flex items-center justify-center">
+                                            <Send size={24} className="text-brand-textMuted" />
                                         </div>
                                         <p className="text-sm">No messages yet. Say hello!</p>
                                     </div>
                                 ) : (
-                                    messages.map((msg, idx) => {
-                                        const isMe = (msg.sender?.id || msg.sender_id) === user?.id
-                                        return (
-                                            <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                                <div
-                                                    className={`max-w-[70%] rounded-2xl px-4 py-2.5 shadow-md ${isMe
-                                                        ? 'bg-indigo-600 text-white rounded-br-none'
-                                                        : 'bg-slate-700 text-slate-200 rounded-bl-none'
-                                                        }`}
-                                                >
-                                                    <p className="text-sm leading-relaxed">{msg.content}</p>
-                                                    <p className={`text-[10px] mt-1 text-right ${isMe ? 'text-indigo-200' : 'text-slate-400'} opacity-70`}>
-                                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </p>
+                                    <div className="flex flex-col gap-4">
+                                        {messages.map((msg, idx) => {
+                                            const isMe = (msg.sender?.id || msg.sender_id) === user?.id
+                                            return (
+                                                <div key={msg.id || `msg-${idx}-${msg.created_at}`} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                                    <div
+                                                        className={`max-w-[70%] rounded-2xl px-4 py-2.5 shadow-md ${isMe
+                                                            ? 'bg-brand-primary text-white rounded-br-none'
+                                                            : 'bg-brand-alt text-brand-textMain rounded-bl-none'
+                                                            }`}
+                                                    >
+                                                        <p className="text-sm leading-relaxed">{msg.content}</p>
+                                                        <p className={`text-[10px] mt-1 text-right ${isMe ? 'text-indigo-200' : 'text-brand-textSecondary'} opacity-70`}>
+                                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )
-                                    })
+                                            )
+                                        })}
+                                    </div>
                                 )}
                                 <div ref={messagesEndRef} />
                             </div>
 
                             {/* Input Area */}
-                            <div className="p-4 bg-slate-800 shrink-0">
+                            <div className="p-4 bg-white border border-brand-border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 shrink-0">
                                 <form onSubmit={handleSend} className="flex items-center space-x-3 max-w-4xl mx-auto w-full">
                                     <div className="relative flex-1">
                                         <input
@@ -312,12 +314,12 @@ const Messages = () => {
                                             value={inputText}
                                             onChange={(e) => setInputText(e.target.value)}
                                             disabled={!isConnected}
-                                            className="w-full bg-slate-700/50 text-white placeholder-slate-400 rounded-full pl-5 pr-12 py-3 border border-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all disabled:opacity-50 text-sm"
+                                            className="w-full bg-brand-alt text-brand-textMain placeholder-slate-400 rounded-full pl-5 pr-12 py-3 border border-brand-border focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all disabled:opacity-50 text-sm"
                                         />
                                         <button
                                             type="submit"
                                             disabled={!inputText.trim() || !isConnected}
-                                            className="absolute right-1.5 top-1.5 p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="absolute right-1.5 top-1.5 p-1.5 bg-brand-primary hover:bg-brand-primaryHover text-white hover:scale-[1.03] active:scale-[0.97] shadow-sm transition-all duration-200 hover:bg-indigo-500 text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             <Send size={18} />
                                         </button>
@@ -326,12 +328,12 @@ const Messages = () => {
                             </div>
                         </>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-slate-500 p-8">
-                            <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-6 shadow-xl border border-slate-700 animate-pulse-slow">
-                                <Send size={40} className="text-indigo-500" />
+                        <div className="flex-1 flex flex-col items-center justify-center text-brand-textMuted p-8">
+                            <div className="w-24 h-24 bg-white border border-brand-border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 rounded-full flex items-center justify-center mb-6 shadow-xl border border-brand-border animate-pulse-slow">
+                                <Send size={40} className="text-brand-primary" />
                             </div>
-                            <h3 className="text-2xl font-bold text-white mb-2">Your Messages</h3>
-                            <p className="max-w-xs text-center text-slate-400">Select a conversation from the left to start chatting.</p>
+                            <h3 className="text-2xl font-bold text-brand-textMain mb-2">Your Messages</h3>
+                            <p className="max-w-xs text-center text-brand-textSecondary">Select a conversation from the left to start chatting.</p>
                         </div>
                     )}
                 </div>

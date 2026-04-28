@@ -14,7 +14,9 @@ const PrivateRoute = ({ children, requiredRole }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    // Preserve the intended destination for post-login redirect
+    const currentPath = window.location.pathname
+    return <Navigate to={`/register?next=${encodeURIComponent(currentPath)}`} replace />
   }
 
   if (requiredRole && user?.role !== requiredRole) {

@@ -2,60 +2,52 @@ import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import apiClient from '../api/apiClient'
-import { Search, Briefcase, MapPin, Award, Filter, X } from 'lucide-react'
-import Footer from '../components/Footer'
+import { Search, Briefcase, MapPin, Award, Filter, X, ExternalLink } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+
+const getInitials = (firstName, lastName) =>
+  `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() || 'AL'
 
 const ExploreAlumni = () => {
+  const { isAuthenticated, loading: authLoading } = useAuth()
   const [alumni, setAlumni] = useState([])
   const [skills, setSkills] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({
-    search: '',
-    skills: [],
-    industry: '',
-    experience_min: '',
-    city: '',
-    country: '',
-  })
+  const [filters, setFilters] = useState({ search: '', skills: [], industry: '', experience_min: '', city: '', country: '' })
   const [showFilters, setShowFilters] = useState(false)
+  const [pagination, setPagination] = useState({ count: 0, next: null, previous: null, currentPage: 1 })
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    if (!authLoading && isAuthenticated) fetchData()
+  }, [authLoading, isAuthenticated])
 
   useEffect(() => {
-    searchAlumni()
-  }, [filters])
+    if (!authLoading && isAuthenticated) searchAlumni()
+  }, [filters, authLoading, isAuthenticated])
 
   const fetchData = async () => {
     try {
       const skillsRes = await apiClient.get('/profiles/skills/')
       setSkills(skillsRes.data.results || [])
       await searchAlumni()
-    } catch (error) {
-      console.error('Error fetching data:', error)
-    } finally {
-      setLoading(false)
-    }
+    } catch (e) { console.error(e) }
+    finally { setLoading(false) }
   }
 
-  const searchAlumni = async () => {
+  const searchAlumni = async (page = 1) => {
     try {
-      const params = new URLSearchParams()
-      if (filters.search) params.append('search', filters.search)
-      if (filters.industry) params.append('industry', filters.industry)
-      if (filters.experience_min) params.append('experience_min', filters.experience_min)
-      if (filters.city) params.append('city', filters.city)
-      if (filters.country) params.append('country', filters.country)
-      filters.skills.forEach(skillId => params.append('skills', skillId))
-
-      const response = await apiClient.get(`/profiles/alumni/search/?${params}`)
-      // Handle pagination results or direct array
-      const results = response.data.results || response.data || []
-      setAlumni(results)
-    } catch (error) {
-      console.error('Error searching alumni:', error)
-    }
+      const params = {
+        page,
+        ...(filters.search && { q: filters.search }),
+        ...(filters.industry && { industry: filters.industry }),
+        ...(filters.experience_min && { min_experience: filters.experience_min }),
+        ...(filters.city && { city: filters.city }),
+        ...(filters.skills.length > 0 && { skills: filters.skills.join(',') }),
+      }
+      const res = await apiClient.get('/search/alumni/', { params })
+      setAlumni(res.data.results || [])
+      setPagination({ count: res.data.count, next: res.data.next, previous: res.data.previous, currentPage: page })
+    } catch (e) { console.error(e) }
   }
 
   const toggleSkill = (skillId) => {
@@ -67,208 +59,167 @@ const ExploreAlumni = () => {
     }))
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-900 pt-16 flex items-center justify-center">
-        <div className="text-slate-400">Loading...</div>
-      </div>
-    )
-  }
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="spinner" />
+    </div>
+  )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-4xl font-bold text-white mb-2">Explore Alumni</h1>
-          <p className="text-slate-400">Connect with experienced professionals</p>
-        </motion.div>
+    <div>
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+        <p className="text-xs font-mono-ui text-slate-400 uppercase tracking-widest mb-1">Directory</p>
+        <h1 className="font-heading text-3xl text-slate-900">Explore Alumni</h1>
+        <p className="text-slate-500 mt-1">{pagination.count} alumni in the network</p>
+      </motion.div>
 
-        {/* Search Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="card mb-6"
-        >
-          <div className="flex items-center space-x-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
-              <input
-                type="text"
-                value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                placeholder="Search by name, company, position..."
-                className="input-field pl-10"
-              />
-            </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="btn-secondary flex items-center space-x-2"
-            >
-              <Filter size={18} />
-              <span>Filters</span>
-            </button>
-          </div>
-
-          {/* Filters Panel */}
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="mt-4 pt-4 border-t border-slate-700 space-y-4"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Industry</label>
-                  <input
-                    type="text"
-                    value={filters.industry}
-                    onChange={(e) => setFilters({ ...filters, industry: e.target.value })}
-                    placeholder="e.g., Technology"
-                    className="input-field"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Min Experience</label>
-                  <input
-                    type="number"
-                    value={filters.experience_min}
-                    onChange={(e) => setFilters({ ...filters, experience_min: e.target.value })}
-                    placeholder="Years"
-                    className="input-field"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">City</label>
-                  <input
-                    type="text"
-                    value={filters.city}
-                    onChange={(e) => setFilters({ ...filters, city: e.target.value })}
-                    placeholder="City"
-                    className="input-field"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Skills</label>
-                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-slate-800/50 rounded-lg">
-                  {skills.map((skill) => (
-                    <button
-                      key={skill.id}
-                      onClick={() => toggleSkill(skill.id)}
-                      className={`px-3 py-1 rounded text-sm transition-colors ${filters.skills.includes(skill.id)
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                        }`}
-                    >
-                      {skill.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <button
-                onClick={() => setFilters({
-                  search: '',
-                  skills: [],
-                  industry: '',
-                  experience_min: '',
-                  city: '',
-                  country: '',
-                })}
-                className="text-sm text-indigo-400 hover:text-indigo-300"
-              >
-                Clear all filters
-              </button>
-            </motion.div>
-          )}
-        </motion.div>
-
-        {/* Results */}
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-white">
-              Results ({alumni.length})
-            </h2>
-          </div>
-
-          {alumni.length === 0 ? (
-            <div className="card text-center py-12">
-              <Search className="text-slate-400 mx-auto mb-4" size={48} />
-              <p className="text-slate-400">No alumni found. Try adjusting your filters.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {alumni.map((alum, index) => (
-                <motion.div
-                  key={alum.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileHover={{ y: -2 }}
-                  className="card cursor-pointer"
-                >
-                  <div className="flex items-start space-x-3 mb-4">
-                    <div className="w-12 h-12 bg-indigo-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Briefcase className="text-indigo-400" size={24} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-white mb-1">
-                        {alum.user?.first_name} {alum.user?.last_name}
-                      </h3>
-                      <p className="text-slate-400 text-sm">{alum.user?.email}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 mb-4">
-                    {alum.current_position && (
-                      <p className="text-white text-sm">
-                        <Briefcase className="inline mr-2 text-slate-400" size={14} />
-                        {alum.current_position}
-                      </p>
-                    )}
-                    {alum.current_company && (
-                      <p className="text-slate-300 text-sm">
-                        at {alum.current_company}
-                      </p>
-                    )}
-                    {alum.city && alum.country && (
-                      <p className="text-slate-400 text-xs flex items-center space-x-1">
-                        <MapPin size={12} />
-                        <span>{alum.city}, {alum.country}</span>
-                      </p>
-                    )}
-                  </div>
-
-                  {alum.skills && alum.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {alum.skills.slice(0, 4).map((skill) => (
-                        <span
-                          key={skill.id}
-                          className="px-2 py-1 bg-indigo-600/20 text-indigo-300 text-xs rounded border border-indigo-500/30"
-                        >
-                          {skill.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <Link
-                    to={`/alumni/${alum.id}`}
-                    className="btn-primary text-sm w-full text-center"
-                  >
-                    View Profile
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          )}
+      {/* Search bar */}
+      <div className="flex gap-3 mb-4">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search alumni by name, company, or role…"
+            className="input-field pl-10"
+            value={filters.search}
+            onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
+          />
         </div>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={`btn-secondary gap-2 ${showFilters ? 'ring-2 ring-[#0052FF]/20' : ''}`}
+        >
+          <Filter size={16} />
+          Filters
+          {(filters.skills.length > 0 || filters.industry || filters.city) && (
+            <span className="ml-1 w-5 h-5 rounded-full bg-[#0052FF] text-white text-xs flex items-center justify-center">
+              {filters.skills.length + (filters.industry ? 1 : 0) + (filters.city ? 1 : 0)}
+            </span>
+          )}
+        </button>
       </div>
-      <Footer />
+
+      {/* Filters panel */}
+      {showFilters && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="card mb-4"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Industry</label>
+              <input type="text" placeholder="e.g., Technology" className="input-field"
+                value={filters.industry} onChange={e => setFilters(prev => ({ ...prev, industry: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">City</label>
+              <input type="text" placeholder="e.g., San Francisco" className="input-field"
+                value={filters.city} onChange={e => setFilters(prev => ({ ...prev, city: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Min Experience (years)</label>
+              <input type="number" placeholder="0" className="input-field"
+                value={filters.experience_min} onChange={e => setFilters(prev => ({ ...prev, experience_min: e.target.value }))} />
+            </div>
+          </div>
+          {skills.length > 0 && (
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-2">Skills</label>
+              <div className="flex flex-wrap gap-2">
+                {skills.slice(0, 20).map(skill => (
+                  <button key={skill.id} onClick={() => toggleSkill(skill.id)}
+                    className={`px-3 py-1 text-xs rounded-full border transition-all ${
+                      filters.skills.includes(skill.id)
+                        ? 'bg-[#0052FF] text-white border-[#0052FF]'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-[#0052FF]'
+                    }`}>
+                    {skill.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* Results Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {alumni.length === 0 ? (
+          <div className="col-span-full card text-center py-14">
+            <Award size={40} className="mx-auto text-slate-300 mb-3" />
+            <h3 className="font-heading text-xl text-slate-700">No alumni found</h3>
+            <p className="text-slate-500 text-sm mt-1">Try adjusting your filters</p>
+          </div>
+        ) : alumni.map((a, i) => (
+          <motion.div
+            key={a.id}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.04 }}
+            className="card-hover flex flex-col items-center text-center group h-full"
+          >
+            {/* Header / Badges */}
+            <div className="w-full flex justify-end mb-2 h-6">
+              {a.available_for_mentorship && (
+                <span className="badge badge-green text-[10px] animate-pulse">Mentor</span>
+              )}
+            </div>
+
+            {/* Name First */}
+            {/* Avatar */}
+            <div className="avatar w-20 h-20 text-xl shrink-0 mb-4 ring-4 ring-slate-50 group-hover:ring-[#0052FF]/10 transition-all">
+              {a.profile_picture || a.user?.profile_photo
+                ? <img src={(a.profile_picture || a.user?.profile_photo).startsWith('http') ? (a.profile_picture || a.user?.profile_photo) : `http://localhost:8000${a.profile_picture || a.user?.profile_photo}`} alt="" className="w-full h-full rounded-full object-cover" />
+                : getInitials(a.user?.first_name, a.user?.last_name)}
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 w-full">
+              <h3 className="font-heading text-lg text-slate-900 group-hover:text-[#0052FF] transition-colors line-clamp-1 mb-1">
+                {a.name}
+              </h3>
+              <p className="text-sm font-semibold text-slate-700 line-clamp-2 min-h-[1.5rem]">
+                {a.current_position}
+              </p>
+              <p className="text-xs text-slate-500 mt-1 mb-3">
+                {a.company ? `at ${a.company}` : ''}
+              </p>
+
+              {a.skills?.length > 0 && (
+                <div className="flex flex-wrap justify-center gap-1.5 mt-4">
+                  {a.skills.slice(0, 3).map(s => (
+                    <span key={s.id} className="skill-pill !px-2 !py-0.5 !text-[10px]">{s.name}</span>
+                  ))}
+                  {a.skills.length > 3 && <span className="skill-pill-muted !px-2 !py-0.5 !text-[10px]">+{a.skills.length - 3}</span>}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="w-full pt-4 mt-4 border-t border-slate-100">
+              <Link
+                to={`/alumni/${a.id}`}
+                className="w-full btn-secondary text-sm !py-2 justify-center group-hover:bg-[#0052FF] group-hover:text-white transition-all"
+              >
+                View Profile
+              </Link>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Pagination */}
+      {(pagination.next || pagination.previous) && (
+        <div className="flex justify-center gap-3 mt-8">
+          <button onClick={() => searchAlumni(pagination.currentPage - 1)} disabled={!pagination.previous}
+            className="btn-secondary disabled:opacity-40">← Previous</button>
+          <span className="flex items-center text-sm text-slate-500">Page {pagination.currentPage}</span>
+          <button onClick={() => searchAlumni(pagination.currentPage + 1)} disabled={!pagination.next}
+            className="btn-secondary disabled:opacity-40">Next →</button>
+        </div>
+      )}
     </div>
   )
 }

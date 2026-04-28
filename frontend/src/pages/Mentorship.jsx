@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import apiClient from '../api/apiClient'
-import { MessageCircle, Plus, X, Send, CheckCircle, AlertCircle, Clock } from 'lucide-react'
-import Footer from '../components/Footer'
+import { MessageCircle, Plus, X, Send, CheckCircle, AlertCircle, Clock, Search } from 'lucide-react'
 import { useModal } from '../contexts/ModalContext'
 
 const Mentorship = () => {
@@ -10,7 +9,17 @@ const Mentorship = () => {
   const [alumni, setAlumni] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [selectedAlumniId, setSelectedAlumniId] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const { showModal } = useModal()
+
+  const filteredAlumni = alumni.filter(a => {
+    const name = `${a.user?.first_name} ${a.user?.last_name}`.toLowerCase()
+    const company = (a.current_company || '').toLowerCase()
+    const pos = (a.current_position || '').toLowerCase()
+    const query = searchQuery.toLowerCase()
+    return name.includes(query) || company.includes(query) || pos.includes(query)
+  })
 
   useEffect(() => {
     fetchData()
@@ -55,9 +64,9 @@ const Mentorship = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'accepted':
-        return <CheckCircle className="text-emerald-400" size={20} />
+        return <CheckCircle className="text-brand-success" size={20} />
       case 'rejected':
-        return <AlertCircle className="text-red-400" size={20} />
+        return <AlertCircle className="text-red-600" size={20} />
       default:
         return <Clock className="text-yellow-400" size={20} />
     }
@@ -65,34 +74,29 @@ const Mentorship = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'accepted':
-        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50'
-      case 'rejected':
-        return 'bg-red-500/20 text-red-400 border-red-500/50'
-      default:
-        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50'
+      case 'accepted': return 'badge badge-green'
+      case 'rejected': return 'badge badge-red'
+      default:         return 'badge badge-amber'
     }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 pt-16 flex items-center justify-center">
-        <div className="text-slate-400">Loading...</div>
+      <div className="min-h-screen bg-brand-bg pt-16 flex items-center justify-center">
+        <div className="text-brand-textSecondary">Loading...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex justify-between items-center mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <h1 className="text-4xl font-bold text-white mb-2">Mentorship Requests</h1>
-            <p className="text-slate-400">Connect with alumni mentors for career guidance</p>
-          </motion.div>
+    <div>
+      <div className="mb-8">
+        <p className="text-xs font-mono-ui text-slate-400 uppercase tracking-widest mb-1">Mentorship</p>
+        <h1 className="font-heading text-3xl text-slate-900">Mentorship Requests</h1>
+        <p className="text-slate-500 mt-1">Connect with alumni mentors for career guidance.</p>
+      </div>
+      <div>
+        <div className="flex justify-end mb-6">
           <motion.button
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -113,32 +117,64 @@ const Mentorship = () => {
             className="card mb-8"
           >
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold text-white">New Mentorship Request</h2>
+              <h2 className="text-2xl font-semibold text-brand-textMain">New Mentorship Request</h2>
               <button
                 onClick={() => setShowForm(false)}
-                className="text-slate-400 hover:text-white transition-colors"
+                className="text-brand-textSecondary hover:text-brand-primary transition-colors"
               >
                 <X size={24} />
               </button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Select Alumni</label>
-                <select
-                  name="alumni_profile_id"
-                  required
-                  className="input-field"
-                >
-                  <option value="">Choose an alumni...</option>
-                  {alumni.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.user?.email} - {a.current_position || 'Alumni'}
-                    </option>
-                  ))}
-                </select>
+                <label className="block text-sm font-semibold text-slate-700 mb-3">Select a Mentor</label>
+                
+                {/* Search Box */}
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Search by name, company, or skills..."
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all outline-none text-sm"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                {/* Mentor Selection List */}
+                <div className="max-h-60 overflow-y-auto border border-slate-100 rounded-xl divide-y divide-slate-50 bg-slate-50/30">
+                  {filteredAlumni.length > 0 ? filteredAlumni.map((a) => (
+                    <div 
+                      key={a.id} 
+                      onClick={() => setSelectedAlumniId(a.id)}
+                      className={`p-3 flex items-center gap-3 cursor-pointer transition-colors ${selectedAlumniId === a.id ? 'bg-brand-primary/10 ring-1 ring-inset ring-brand-primary/20' : 'hover:bg-white'}`}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-brand-alt flex items-center justify-center shrink-0 border border-slate-200">
+                        {a.user?.first_name?.[0]}{a.user?.last_name?.[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-center">
+                          <p className={`text-sm font-bold truncate ${selectedAlumniId === a.id ? 'text-brand-primary' : 'text-slate-800'}`}>
+                            {a.user?.first_name} {a.user?.last_name}
+                          </p>
+                          {a.industry && <span className="text-[10px] text-slate-400 uppercase font-bold">{a.industry}</span>}
+                        </div>
+                        <p className="text-xs text-slate-500 truncate">
+                          {a.current_position} {a.current_company && `at ${a.current_company}`}
+                        </p>
+                      </div>
+                      {selectedAlumniId === a.id && <CheckCircle size={18} className="text-brand-primary" />}
+                    </div>
+                  )) : (
+                    <div className="p-8 text-center text-slate-400 text-sm">
+                      No mentors found matching your search.
+                    </div>
+                  )}
+                </div>
+                <input type="hidden" name="alumni_profile_id" value={selectedAlumniId || ''} required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Message</label>
+                <label className="block text-sm font-medium text-brand-textSecondary mb-2">Message</label>
                 <textarea
                   name="message"
                   rows={4}
@@ -147,7 +183,7 @@ const Mentorship = () => {
                   placeholder="Why are you interested in mentorship from this alumni? What specific guidance are you seeking?"
                 />
               </div>
-              <div className="flex justify-end space-x-4 pt-4 border-t border-slate-700">
+              <div className="flex justify-end space-x-4 pt-4 border-t border-brand-border">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
@@ -174,10 +210,10 @@ const Mentorship = () => {
             className="card text-center py-12"
           >
             <div className="w-16 h-16 bg-indigo-600/20 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <MessageCircle className="text-indigo-400" size={32} />
+              <MessageCircle className="text-brand-primary" size={32} />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">No mentorship requests yet</h3>
-            <p className="text-slate-400 mb-6">Start connecting with alumni mentors</p>
+            <h3 className="text-xl font-semibold text-brand-textMain mb-2">No mentorship requests yet</h3>
+            <p className="text-brand-textSecondary mb-6">Start connecting with alumni mentors</p>
             <button
               onClick={() => setShowForm(true)}
               className="btn-primary inline-flex items-center space-x-2"
@@ -199,10 +235,10 @@ const Mentorship = () => {
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-white mb-1">
+                    <h3 className="text-lg font-semibold text-brand-textMain mb-1">
                       {request.alumni_profile?.user?.email}
                     </h3>
-                    <p className="text-slate-400 text-sm">
+                    <p className="text-brand-textSecondary text-sm">
                       {request.alumni_profile?.current_position || 'Alumni'} at {request.alumni_profile?.current_company || 'Company'}
                     </p>
                   </div>
@@ -211,8 +247,8 @@ const Mentorship = () => {
                     <span className="capitalize">{request.status}</span>
                   </div>
                 </div>
-                <p className="text-slate-300 mb-4 leading-relaxed">{request.message}</p>
-                <p className="text-xs text-slate-500 flex items-center space-x-1">
+                <p className="text-brand-textSecondary mb-4 leading-relaxed">{request.message}</p>
+                <p className="text-xs text-brand-textMuted flex items-center space-x-1">
                   <Clock size={12} />
                   <span>Sent on {new Date(request.created_at).toLocaleDateString()}</span>
                 </p>
@@ -221,7 +257,6 @@ const Mentorship = () => {
           </div>
         )}
       </div>
-      <Footer />
     </div>
   )
 }

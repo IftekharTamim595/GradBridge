@@ -67,37 +67,37 @@ const AdminLogin = () => {
                     <div className="text-center">
                         <Link to="/" className="inline-block group mb-6">
                             <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-300">
-                                <ShieldCheck size={32} className="text-white" />
+                                <ShieldCheck size={32} className="text-brand-textMain" />
                             </div>
                         </Link>
-                        <h2 className="text-3xl font-bold text-white tracking-tight">
+                        <h2 className="text-3xl font-bold text-brand-textMain tracking-tight">
                             Admin Portal
                         </h2>
-                        <p className="mt-2 text-slate-400">
+                        <p className="mt-2 text-brand-textSecondary">
                             Authorized personnel only
                         </p>
                     </div>
 
                     {/* Form Card */}
-                    <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+                    <div className="bg-white border border-brand-border backdrop-blur-xl border border-brand-border rounded-3xl p-8 shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
 
 
 
                         <form className="space-y-6" onSubmit={handleSubmit}>
                             <div>
-                                <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
+                                <label htmlFor="email" className="block text-sm font-medium text-brand-textSecondary mb-2">
                                     Admin Email
                                 </label>
                                 <div className="relative group">
-                                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-400 transition-colors" size={20} />
+                                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-brand-textSecondary group-focus-within:text-indigo-400 transition-colors" size={20} />
                                     <input
                                         id="email"
                                         name="email"
                                         type="email"
                                         autoComplete="email"
                                         required
-                                        className="input-field pl-10 bg-slate-800/50 border-slate-700 focus:border-indigo-500 focus:bg-slate-800 transition-all"
+                                        className="input-field pl-10 bg-white border border-brand-border border-brand-border focus:border-indigo-500 focus:bg-brand-surface transition-all"
                                         placeholder="admin@gradbridge.com"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
@@ -106,17 +106,17 @@ const AdminLogin = () => {
                             </div>
 
                             <div>
-                                <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
+                                <label htmlFor="password" className="block text-sm font-medium text-brand-textSecondary mb-2">
                                     Password
                                 </label>
                                 <div className="relative group">
-                                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-400 transition-colors" size={20} />
+                                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-brand-textSecondary group-focus-within:text-indigo-400 transition-colors" size={20} />
                                     <input
                                         id="password"
                                         name="password"
                                         type={showPassword ? "text" : "password"}
                                         required
-                                        className="input-field pl-10 pr-10 bg-slate-800/50 border-slate-700 focus:border-indigo-500 focus:bg-slate-800 transition-all"
+                                        className="input-field pl-10 pr-10 bg-white border border-brand-border border-brand-border focus:border-indigo-500 focus:bg-brand-surface transition-all"
                                         placeholder="••••••••"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
@@ -124,7 +124,7 @@ const AdminLogin = () => {
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 focus:outline-none"
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-brand-textSecondary hover:text-slate-300 focus:outline-none"
                                     >
                                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                     </button>
@@ -148,7 +148,7 @@ const AdminLogin = () => {
                         </form>
 
                         <div className="mt-6 text-center">
-                            <Link to="/login" className="text-sm text-slate-400 hover:text-white transition-colors">
+                            <Link to="/login" className="text-sm text-brand-textSecondary hover:text-brand-primary transition-colors">
                                 Return to Student/Alumni Login
                             </Link>
                         </div>

@@ -23,22 +23,38 @@ class ProjectViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'title']
     
     def get_queryset(self):
+        queryset = Project.objects.all()
+        student_profile_id = self.request.query_params.get('student_profile')
         user = self.request.user
-        
-        if user.is_student:
-            # Students see their own projects
+
+        if student_profile_id:
+            # Filter by specific profile
+            queryset = queryset.filter(student_profile_id=student_profile_id)
+            
+            # If not the owner, only show public projects
             from profiles.models import StudentProfile
             try:
-                student_profile = StudentProfile.objects.get(user=user)
-                return Project.objects.filter(student_profile=student_profile)
+                profile = StudentProfile.objects.get(id=student_profile_id)
+                if profile.user != user:
+                    queryset = queryset.filter(is_public=True)
             except StudentProfile.DoesNotExist:
                 return Project.objects.none()
+            
+            return queryset
+
+        # Default behavior (no filter)
+        if user.is_authenticated:
+            if user.is_student:
+                from profiles.models import StudentProfile
+                try:
+                    student_profile = StudentProfile.objects.get(user=user)
+                    return Project.objects.filter(student_profile=student_profile)
+                except StudentProfile.DoesNotExist:
+                    return Project.objects.none()
+            elif user.is_alumni or user.is_staff:
+                return Project.objects.filter(is_public=True)
         
-        elif user.is_alumni or user.is_admin:
-            # Alumni and admins see all public projects
-            return Project.objects.filter(is_public=True)
-        
-        return Project.objects.none()
+        return Project.objects.filter(is_public=True)
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
