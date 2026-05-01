@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useModal } from '../contexts/ModalContext'
+import { API_BASE_URL } from '../utils/url'
 
 export const useChatSocket = (conversationId) => {
     const { isAuthenticated } = useAuth()
@@ -31,12 +32,11 @@ export const useChatSocket = (conversationId) => {
         }
 
         let wsHost = window.location.host;
-        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
         try {
-            const apiUrl = new URL(apiBase);
+            const apiUrl = new URL(API_BASE_URL);
             wsHost = apiUrl.host;
         } catch (e) {
-            console.warn('Invalid VITE_API_BASE_URL, falling back to window.location.host');
+            console.warn('Invalid API_BASE_URL, falling back to window.location.host');
         }
 
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import apiClient from '../api/apiClient'
+import { getMediaUrl } from '../utils/url'
 import { useAuth } from '../contexts/AuthContext';
 import {
     User, MapPin, GraduationCap, Award, Briefcase,
@@ -105,7 +106,7 @@ const AlumniProfileView = () => {
                                 <div className="w-32 h-32 md:w-40 md:h-40 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-105 transition-transform duration-300">
                                     {profile.profile_picture || profile.user?.profile_photo ? (
                                         <img
-                                            src={(profile.profile_picture || profile.user.profile_photo).startsWith('http') ? (profile.profile_picture || profile.user.profile_photo) : `http://localhost:8000${profile.profile_picture || profile.user.profile_photo}`}
+                                            src={getMediaUrl(profile.profile_picture || profile.user.profile_photo)}
                                             alt={`${profile.user?.first_name} ${profile.user?.last_name}`}
                                             className="w-full h-full object-cover rounded-2xl"
                                         />

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getMediaUrl } from '../utils/url'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -81,7 +82,7 @@ const Sidebar = ({ onAIInsights }) => {
         >
           <div className="avatar w-9 h-9 text-sm shrink-0">
             {user?.profile_photo
-              ? <img src={user.profile_photo.startsWith('http') ? user.profile_photo : `http://localhost:8000${user.profile_photo}`} alt="" className="w-full h-full rounded-full object-cover" />
+              ? <img src={getMediaUrl(user.profile_photo)} alt="" className="w-full h-full rounded-full object-cover" />
               : initials}
           </div>
           <div className="flex-1 text-left min-w-0">

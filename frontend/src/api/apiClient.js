@@ -1,7 +1,8 @@
 import axios from 'axios'
+import { API_BASE_URL } from '../utils/url'
 
 const apiClient = axios.create({
-    baseURL: 'http://localhost:8000/api',
+    baseURL: `${API_BASE_URL}/api`,
 })
 
 // Attach token on every request
@@ -73,7 +74,7 @@ apiClient.interceptors.response.use(
 
             try {
                 // Attempt to refresh the token
-                const response = await axios.post('http://localhost:8000/api/auth/token/refresh/', {
+                const response = await axios.post(`${API_BASE_URL}/api/auth/token/refresh/`, {
                     refresh: refreshToken
                 })
 

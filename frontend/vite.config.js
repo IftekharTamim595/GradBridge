@@ -1,28 +1,33 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    host: true, // Listen on all interfaces (0.0.0.0)
-    allowedHosts: [
-      'localhost',
-      '.trycloudflare.com',
-    ],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const apiTarget = env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
 
-    proxy: {
-      '/api': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/ws': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-        secure: false,
-        ws: true
+  return {
+    plugins: [react()],
+    server: {
+      host: true, // Listen on all interfaces (0.0.0.0)
+      allowedHosts: [
+        'localhost',
+        '.trycloudflare.com',
+      ],
+
+      proxy: {
+        '/api': {
+          target: apiTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/ws': {
+          target: apiTarget,
+          changeOrigin: true,
+          secure: false,
+          ws: true
+        }
       }
-    }
 
-  },
+    },
+  }
 })

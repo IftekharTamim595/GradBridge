@@ -134,7 +134,7 @@ GradBridge is a modern web platform that bridges the gap between university stud
 3. **Set up environment variables**
    Create a `.env.local` file in the `frontend` directory:
    ```env
-   VITE_API_BASE_URL=http://localhost:8000/api
+   VITE_API_BASE_URL=http://localhost:8000
    VITE_GOOGLE_CLIENT_ID=your-google-client-id
    VITE_GOOGLE_REDIRECT_URI=http://localhost:5173/auth/google/callback
    ```

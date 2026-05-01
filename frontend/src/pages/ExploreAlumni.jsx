@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import apiClient from '../api/apiClient'
 import { Search, Briefcase, MapPin, Award, Filter, X, ExternalLink } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { getMediaUrl } from '../utils/url'
 
 const getInitials = (firstName, lastName) =>
   `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() || 'AL'
@@ -171,7 +172,7 @@ const ExploreAlumni = () => {
             {/* Avatar */}
             <div className="avatar w-20 h-20 text-xl shrink-0 mb-4 ring-4 ring-slate-50 group-hover:ring-[#0052FF]/10 transition-all">
               {a.profile_picture || a.user?.profile_photo
-                ? <img src={(a.profile_picture || a.user?.profile_photo).startsWith('http') ? (a.profile_picture || a.user?.profile_photo) : `http://localhost:8000${a.profile_picture || a.user?.profile_photo}`} alt="" className="w-full h-full rounded-full object-cover" />
+                ? <img src={getMediaUrl(a.profile_picture || a.user?.profile_photo)} alt="" className="w-full h-full rounded-full object-cover" />
                 : getInitials(a.user?.first_name, a.user?.last_name)}
             </div>
 
