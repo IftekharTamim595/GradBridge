@@ -85,6 +85,9 @@ function AppLayout() {
             <Route path="/alumni/profile" element={
               <PrivateRoute requiredRole="alumni"><AlumniProfile /></PrivateRoute>
             } />
+            <Route path="/alumni/mentorship" element={
+              <PrivateRoute requiredRole="alumni"><Mentorship /></PrivateRoute>
+            } />
 
             <Route path="/messages" element={
               <PrivateRoute><Messages /></PrivateRoute>

@@ -16,7 +16,7 @@ class AlumniSearchSerializer(serializers.ModelSerializer):
     Serializer for alumni search results.
     Returns minimal card data for search results.
     """
-    id = serializers.IntegerField(source='user.id', read_only=True)
+    id = serializers.IntegerField(read_only=True)
     name = serializers.SerializerMethodField()
     email = serializers.EmailField(source='user.email', read_only=True)
     profile_photo = serializers.SerializerMethodField()

@@ -7,7 +7,7 @@ from .utils import ResumeParser, SkillExtractor, ResumeScorer, CareerAdvisor, RO
 from .openrouter import call_openrouter
 from profiles.models import StudentProfile
 import os
-
+import re
 import json
 import logging
 
@@ -36,61 +36,61 @@ class AnalyzeResumeView(APIView):
             # 2. Skill Extraction (Local)
             skills = SkillExtractor.extract_skills(normalized_text)
             
-            # 3. AI Analysis Prompt
+            # 3. Local Scoring (Deterministic & Reliable)
+            score_data = ResumeScorer.calculate_score(skills, target_role, normalized_text)
+            
+            # 4. AI Analysis Prompt (Qualitative Feedback)
             prompt = f"""
-            Analyze this resume for a '{target_role}' position.
-            Extracted Skills: {', '.join(skills)}
-            Resume Content: {normalized_text[:4000]}
+            Audit this resume for a '{target_role}' role.
+            Detected Skills: {', '.join(skills)}
+            Calculated Score: {score_data['total_score']}/100
+            
+            Resume Content: {normalized_text[:3000]}
 
-            Return ONLY a valid JSON object with the following structure:
+            Return ONLY a valid JSON object:
             {{
-                "score": number (0-100),
-                "breakdown": {{
-                    "skill_match": number (0-40),
-                    "project_relevance": number (0-30),
-                    "experience_depth": number (0-20),
-                    "structure": number (0-10)
-                }},
                 "strengths": string[],
                 "weaknesses": string[],
                 "suggestions": string[]
             }}
-            Rules:
-            - No markdown formatting
-            - No conversational text
-            - Valid JSON only
+            Rules: No markdown, no extra text, valid JSON only.
             """
 
-            # 4. Call AI Service
-            raw_ai_response = call_openrouter(prompt, system_prompt="You are a professional resume auditor that returns strict JSON.")
+            # 5. Call AI Service
+            raw_ai_response = call_openrouter(prompt, system_prompt="You are a professional resume auditor.")
             logger.info(f"--- RAW AI RESPONSE ---\n{raw_ai_response}")
 
-            # 5. Safe JSON Parsing
+            # 6. Safe JSON Parsing
+            insights = {
+                "strengths": [],
+                "gaps": [],
+                "recommendations": []
+            }
+            
             try:
-                # Remove markdown code blocks if present
                 clean_json = raw_ai_response.strip()
-                if clean_json.startswith("```json"):
-                    clean_json = clean_json[7:-3].strip()
-                elif clean_json.startswith("```"):
-                    clean_json = clean_json[3:-3].strip()
+                # Handle markdown code blocks
+                if "```" in clean_json:
+                    clean_json = re.sub(r'```json|```', '', clean_json).strip()
                 
                 ai_data = json.loads(clean_json)
-                logger.info(f"--- PARSED AI DATA ---\n{json.dumps(ai_data, indent=2)}")
-            except (ValueError, json.JSONDecodeError) as e:
-                logger.error(f"JSON Parsing Error: {str(e)}")
-                return Response({'error': 'AI generated an invalid response format. Please try again.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            # 6. Final Data Assembly
-            response_data = {
-                "score": ai_data.get("score", 0),
-                "breakdown": ai_data.get("breakdown", {}),
-                "skills_found": skills,
-                "missing_skills": list(set(ROLE_SKILLS.get(target_role, [])) - set(skills)),
-                "insights": {
+                insights = {
                     "strengths": ai_data.get("strengths", []),
                     "gaps": ai_data.get("weaknesses", []),
                     "recommendations": ai_data.get("suggestions", [])
                 }
+            except Exception as e:
+                logger.error(f"AI Insights Parsing Error: {str(e)}")
+                # Fallback to local heuristic insights
+                insights = CareerAdvisor.generate_insights(score_data, target_role)
+
+            # 7. Final Data Assembly
+            response_data = {
+                "score": score_data["total_score"],
+                "breakdown": score_data["breakdown"],
+                "skills_found": skills,
+                "missing_skills": score_data["missing_skills"],
+                "insights": insights
             }
             
             logger.info("--- FINAL RESPONSE SENT TO FRONTEND ---")
@@ -128,6 +128,9 @@ class AnalyzeResumeTextView(APIView):
             # Try to extract JSON if AI adds extra text
             if "```json" in ai_response:
                 ai_response = ai_response.split("```json")[1].split("```")[0].strip()
+            elif "```" in ai_response:
+                ai_response = ai_response.split("```")[1].split("```")[0].strip()
+                
             data = json.loads(ai_response)
             return Response(data)
         except:

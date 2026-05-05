@@ -29,9 +29,11 @@ const ResumeAnalysis = () => {
         setResult(null);
 
         try {
-            const data = await analyzeResume(file, role);
-            setResult(data);
+            const response = await analyzeResume(file, role);
+            console.log('AI Analysis Response:', response.data);
+            setResult(response.data);
         } catch (err) {
+            console.error('Analysis Error:', err);
             setError(err.response?.data?.error || 'Failed to analyze resume. Please try again.');
         } finally {
             setLoading(false);

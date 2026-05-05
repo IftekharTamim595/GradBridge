@@ -87,6 +87,11 @@ const Navbar = () => {
               GradBridge
             </span>
           </Link>
+          
+          <div className="hidden lg:flex items-center gap-1 ml-4">
+            <Link to="/community" className="btn-ghost text-sm px-3 py-1.5 rounded-lg">Community</Link>
+            <Link to="/hire" className="btn-ghost text-sm px-3 py-1.5 rounded-lg">Hire Students</Link>
+          </div>
 
           {/* Search — shown on authenticated pages */}
           {isAuthenticated && (
@@ -113,7 +118,6 @@ const Navbar = () => {
             {showNav && !isAuthenticated && (
               <div className="hidden md:flex items-center gap-1">
                 <Link to="/" className="btn-ghost text-sm">Home</Link>
-                <Link to="/hire" className="btn-ghost text-sm">Hire</Link>
                 <button
                   onClick={() => setAIInsightsOpen(true)}
                   className="btn-ghost text-sm"

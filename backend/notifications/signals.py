@@ -11,7 +11,7 @@ def create_mentorship_notification(sender, instance, created, **kwargs):
             recipient=instance.alumni_profile.user,
             type='mentorship',
             message=f"New mentorship request from {instance.student_profile.user.first_name}",
-            related_link='/mentorship/requests' # Placeholder link
+            related_link='/alumni/mentorship'
         )
 
 @receiver(post_save, sender=Message)

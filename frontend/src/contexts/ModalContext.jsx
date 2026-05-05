@@ -15,23 +15,27 @@ export const useModal = () => {
 export const ModalProvider = ({ children }) => {
     const [modal, setModal] = useState({
         isOpen: false,
-        type: 'info', // 'success', 'error', 'info', 'warning'
+        type: 'info', // 'success', 'error', 'info', 'warning', 'custom'
         title: '',
         message: '',
+        content: null,
         onConfirm: null,
         confirmText: 'OK',
-        cancelText: 'Cancel'
+        cancelText: 'Cancel',
+        hideButtons: false
     })
 
-    const showModal = useCallback(({ type = 'info', title, message, onConfirm = null, confirmText = 'OK', cancelText = 'Cancel' }) => {
+    const showModal = useCallback(({ type = 'info', title, message, content = null, onConfirm = null, confirmText = 'OK', cancelText = 'Cancel', hideButtons = false }) => {
         setModal({
             isOpen: true,
             type,
             title,
             message,
+            content,
             onConfirm,
             confirmText,
-            cancelText
+            cancelText,
+            hideButtons
         })
     }, [])
 
@@ -79,9 +83,13 @@ export const ModalProvider = ({ children }) => {
                                                             'Information'
                                             )}
                                         </h3>
-                                        <p className="text-brand-textSecondary leading-relaxed">
-                                            {modal.message}
-                                        </p>
+                                        {modal.content ? (
+                                            <div className="mt-2 text-brand-textSecondary leading-relaxed">{modal.content}</div>
+                                        ) : (
+                                            <p className="text-brand-textSecondary leading-relaxed">
+                                                {modal.message}
+                                            </p>
+                                        )}
                                     </div>
                                     <button
                                         onClick={closeModal}
@@ -91,6 +99,7 @@ export const ModalProvider = ({ children }) => {
                                     </button>
                                 </div>
 
+                                {!modal.hideButtons && (
                                 <div className="mt-8 flex justify-end space-x-3">
                                     {modal.onConfirm && (
                                         <button
@@ -105,15 +114,16 @@ export const ModalProvider = ({ children }) => {
                                             if (modal.onConfirm) modal.onConfirm()
                                             closeModal()
                                         }}
-                                        className={`px-6 py-2 rounded-lg font-medium text-brand-textMain transition-transform hover:scale-105 ${modal.type === 'success' ? 'bg-brand-success text-white hover:bg-emerald-500' :
+                                        className={`px-6 py-2 rounded-lg font-medium text-white transition-transform hover:scale-105 ${modal.type === 'success' ? 'bg-brand-success hover:bg-emerald-500' :
                                                 modal.type === 'error' ? 'bg-red-600 hover:bg-red-500' :
                                                     modal.type === 'warning' ? 'bg-amber-600 hover:bg-amber-500' :
-                                                        'bg-brand-primary hover:bg-brand-primaryHover text-white hover:scale-[1.03] active:scale-[0.97] shadow-sm transition-all duration-200 hover:bg-indigo-500'
+                                                        'bg-brand-primary hover:bg-brand-primaryHover shadow-sm transition-all duration-200 hover:bg-indigo-500'
                                             }`}
                                     >
                                         {modal.confirmText}
                                     </button>
                                 </div>
+                                )}
                             </div>
                         </motion.div>
                     </div>

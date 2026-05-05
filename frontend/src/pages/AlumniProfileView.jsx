@@ -189,6 +189,7 @@ const AlumniProfileView = () => {
                                                 showModal({
                                                     type: 'custom',
                                                     title: 'Request Mentorship',
+                                                    hideButtons: true,
                                                     content: (
                                                         <form
                                                             onSubmit={(e) => {
@@ -205,13 +206,13 @@ const AlumniProfileView = () => {
                                                                 name="message"
                                                                 rows={4}
                                                                 required
-                                                                className="w-full bg-white border border-brand-border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 border border-brand-border rounded-lg p-3 text-brand-textMain focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                                className="w-full bg-white border border-brand-border shadow-sm hover:shadow-md transition-all duration-200 border border-brand-border rounded-lg p-3 text-brand-textMain focus:ring-2 focus:ring-indigo-500 outline-none"
                                                                 placeholder="Hi, I'm a student at..."
                                                             />
                                                             <div className="flex justify-end">
                                                                 <button
                                                                     type="submit"
-                                                                    className="px-4 py-2 bg-brand-success text-white hover:bg-emerald-500 text-white rounded-lg font-medium transition-colors"
+                                                                    className="px-4 py-2 bg-brand-success text-white hover:bg-emerald-500 rounded-lg font-medium transition-colors"
                                                                 >
                                                                     Send Request
                                                                 </button>
@@ -220,10 +221,96 @@ const AlumniProfileView = () => {
                                                     )
                                                 })
                                             }}
-                                            className="inline-flex items-center space-x-2 px-6 py-2.5 bg-brand-success text-white hover:bg-emerald-500 text-white rounded-xl font-medium transition-all shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/40 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                                            className="inline-flex items-center space-x-2 px-6 py-2.5 bg-brand-success text-white hover:bg-emerald-500 rounded-xl font-medium transition-all shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/40 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
                                         >
                                             <Sparkles size={18} aria-hidden="true" />
                                             <span>Request Mentorship</span>
+                                        </button>
+                                    )}
+
+                                    {profile.available_for_referrals && (
+                                        <button
+                                            onClick={() => {
+                                                if (!isAuthenticated) {
+                                                    navigate('/login')
+                                                    return
+                                                }
+                                                const submitReferralRequest = async (data) => {
+                                                    try {
+                                                        const res = await apiClient.post('/mentorship/referral-requests/', {
+                                                            alumni_profile_id: profile.id,
+                                                            target_company: data.target_company,
+                                                            target_role: data.target_role,
+                                                            message: data.message
+                                                        })
+                                                        showModal({ type: 'success', message: 'Referral request sent successfully' })
+                                                    } catch (err) {
+                                                        const errMsg = err.response?.data?.error || err.response?.data?.detail || 'Failed to send referral request.'
+                                                        showModal({ type: 'error', message: errMsg })
+                                                    }
+                                                }
+
+                                                showModal({
+                                                    type: 'custom',
+                                                    title: 'Ask for Referral',
+                                                    hideButtons: true,
+                                                    content: (
+                                                        <form
+                                                            onSubmit={(e) => {
+                                                                e.preventDefault();
+                                                                const formData = new FormData(e.target);
+                                                                submitReferralRequest(Object.fromEntries(formData));
+                                                            }}
+                                                            className="space-y-4"
+                                                        >
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <div className="space-y-1">
+                                                                    <label className="text-xs font-medium text-brand-textSecondary">Company</label>
+                                                                    <input
+                                                                        name="target_company"
+                                                                        type="text"
+                                                                        required
+                                                                        className="w-full bg-white border border-brand-border rounded-lg p-2 text-sm text-brand-textMain outline-none focus:ring-2 focus:ring-brand-primary"
+                                                                        placeholder="e.g. Google"
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <label className="text-xs font-medium text-brand-textSecondary">Position</label>
+                                                                    <input
+                                                                        name="target_role"
+                                                                        type="text"
+                                                                        required
+                                                                        className="w-full bg-white border border-brand-border rounded-lg p-2 text-sm text-brand-textMain outline-none focus:ring-2 focus:ring-brand-primary"
+                                                                        placeholder="e.g. Software Engineer"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <label className="text-xs font-medium text-brand-textSecondary">Message</label>
+                                                                <textarea
+                                                                    name="message"
+                                                                    rows={3}
+                                                                    required
+                                                                    className="w-full bg-white border border-brand-border rounded-lg p-2 text-sm text-brand-textMain outline-none focus:ring-2 focus:ring-brand-primary"
+                                                                    placeholder="Why should they refer you?"
+                                                                />
+                                                            </div>
+                                                            <div className="flex justify-end">
+                                                                <button
+                                                                    type="submit"
+                                                                    className="px-4 py-2 bg-brand-primary text-white hover:bg-brand-primaryHover rounded-lg font-medium transition-colors"
+                                                                >
+                                                                    Send Request
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    )
+                                                })
+                                            }}
+                                            className="inline-flex items-center space-x-2 px-6 py-2.5 bg-brand-primary text-white hover:bg-indigo-500 rounded-xl font-medium transition-all shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/40 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+                                        >
+                                            <Briefcase size={18} aria-hidden="true" />
+                                            <span>Ask for Referral</span>
                                         </button>
                                     )}
                                 </div>

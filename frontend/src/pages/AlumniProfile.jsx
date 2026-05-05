@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import apiClient from '../api/apiClient'
-import { Save, CheckCircle, AlertCircle, Briefcase, Building, Award, MapPin, Search, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { Save, CheckCircle, AlertCircle, Briefcase, Building, Award, MapPin, Search, X, ChevronDown, ChevronUp, Globe } from 'lucide-react'
 import { useModal } from '../contexts/ModalContext'
 import { useAuth } from '../contexts/AuthContext'
 import SkillSelect from '../components/SkillSelect'
@@ -108,6 +108,7 @@ const AlumniProfile = () => {
         city: formData.get('city'),
         country: formData.get('country'),
         skill_names: selectedSkillNames,
+        visibility: formData.get('visibility'),
       }
 
       if (profile) {
@@ -385,6 +386,23 @@ const AlumniProfile = () => {
                     required
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="border-b border-brand-border pb-6">
+              <h2 className="text-xl font-semibold text-brand-textMain mb-4 flex items-center space-x-2">
+                <Globe className="text-brand-primary" size={20} />
+                <span>Profile Settings</span>
+              </h2>
+              <div>
+                <label className="block text-sm font-medium text-brand-textSecondary mb-2">Profile Visibility</label>
+                <select name="visibility" defaultValue={profile?.visibility || 'public'} className="input-field">
+                  <option value="public">Visible to everyone (Recommended)</option>
+                  <option value="private">Private (Only you and admins)</option>
+                </select>
+                <p className="text-xs text-brand-textMuted mt-2">
+                  If set to Private, students will not be able to find your profile or request mentorship/referrals.
+                </p>
               </div>
             </div>
 

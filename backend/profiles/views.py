@@ -5,6 +5,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from .models import StudentProfile, AlumniProfile, Skill, SkillGap, Certificate, Experience
@@ -328,12 +329,9 @@ class AlumniProfileViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if obj.visibility == 'private':
             if not user.is_authenticated:
-                 return Response({'detail': 'Private profile.'}, status=status.HTTP_403_FORBIDDEN)
+                 raise PermissionDenied('This profile is private.')
             if not (obj.user == user or user.is_staff):
-                return Response(
-                    {'detail': 'You do not have permission to view this profile.'},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+                 raise PermissionDenied('You do not have permission to view this profile.')
         
         self.check_object_permissions(self.request, obj)
         return obj
@@ -350,7 +348,7 @@ class AlumniProfileViewSet(viewsets.ModelViewSet):
         """
         Get alumni available for mentorship.
         """
-        queryset = AlumniProfile.objects.filter(available_for_mentorship=True)
+        queryset = AlumniProfile.objects.filter(available_for_mentorship=True, visibility='public')
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     
@@ -359,7 +357,7 @@ class AlumniProfileViewSet(viewsets.ModelViewSet):
         """
         Get alumni available for referrals.
         """
-        queryset = AlumniProfile.objects.filter(available_for_referrals=True)
+        queryset = AlumniProfile.objects.filter(available_for_referrals=True, visibility='public')
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     

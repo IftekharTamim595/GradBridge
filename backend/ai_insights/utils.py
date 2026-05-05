@@ -11,11 +11,11 @@ except OSError:
     nlp = None
 
 ROLE_SKILLS = {
-    "backend": ["python", "django", "rest", "api", "postgresql", "docker", "auth", "sql", "git", "linux", "aws", "redis", "celery", "fastapi", "flask", "java", "c++", "node.js", "express"],
-    "frontend": ["javascript", "react", "html", "css", "redux", "ui", "ux", "responsive", "typescript", "webpack", "babel", "tailwind", "bootstrap", "vue", "angular"],
-    "fullstack": ["python", "django", "javascript", "react", "sql", "git", "docker", "aws", "rest", "api", "typescript", "node.js", "postgresql"],
-    "ml_engineer": ["python", "machine learning", "tensorflow", "pytorch", "scikit-learn", "pandas", "numpy", "data analysis", "neural networks", "nlp", "computer vision", "opencv", "matplotlib", "seaborn"],
-    "data_scientist": ["python", "r", "pandas", "numpy", "sql", "statistics", "data visualization", "machine learning", "tableau", "power bi"],
+    "backend": ["python", "django", "rest", "api", "postgresql", "docker", "auth", "sql", "git", "linux", "aws", "redis", "celery", "fastapi", "flask", "java", "c++", "c#", "node.js", "express", "go", "microservices", "mongodb", "mysql", "grpc", "graphql"],
+    "frontend": ["javascript", "react", "html", "css", "redux", "ui", "ux", "responsive", "typescript", "webpack", "babel", "tailwind", "bootstrap", "vue", "angular", "next.js", "sass", "less", "figma", "storybook"],
+    "fullstack": ["python", "django", "javascript", "react", "sql", "git", "docker", "aws", "rest", "api", "typescript", "node.js", "postgresql", "mongodb", "express", "next.js", "graphql", "tailwind"],
+    "ml_engineer": ["python", "machine learning", "tensorflow", "pytorch", "scikit-learn", "pandas", "numpy", "data analysis", "neural networks", "nlp", "computer vision", "opencv", "matplotlib", "seaborn", "keras", "deep learning", "spark", "hadoop"],
+    "data_scientist": ["python", "r", "pandas", "numpy", "sql", "statistics", "data visualization", "machine learning", "tableau", "power bi", "matplotlib", "seaborn", "jupyter", "excel", "bigquery"],
 }
 
 class ResumeParser:
@@ -34,15 +34,13 @@ class ResumeParser:
 
     @staticmethod
     def normalize_text(text):
-        """Cleans and normalizes text."""
+        """Cleans and normalizes text while preserving tech-specific punctuation."""
         if not text:
             return ""
         text = text.lower()
-        text = re.sub(r'\s+', ' ', text) # Replace multiple spaces with single space
-        text = re.sub(r'[^\w\s]', '', text) # Remove punctuation (optional, might remove C++)
-        # Fix for C++ and C# which might get stripped
-        # Actually better to keep some punctuation or handle special cases before stripping
-        # For now, simplistic normalization
+        # Keep C++, C#, .js, etc. by only removing non-alphanumeric that aren't +, #, or .
+        text = re.sub(r'[^a-z0-9\s+#\.]', ' ', text)
+        text = re.sub(r'\s+', ' ', text)
         return text.strip()
 
 class SkillExtractor:

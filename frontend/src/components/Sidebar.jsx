@@ -40,6 +40,7 @@ const Sidebar = ({ onAIInsights }) => {
     if (role === 'alumni') return [
       { icon: LayoutDashboard, label: 'Dashboard',     path: '/alumni/dashboard' },
       { icon: User,            label: 'My Profile',    path: '/alumni/profile' },
+      { icon: BookOpen,        label: 'Mentorship',    path: '/alumni/mentorship' },
       { icon: Briefcase,       label: 'Post Jobs',     path: '/jobs' },
       { icon: Users,           label: 'Find Students', path: '/students/search' },
       { icon: MessageCircle,   label: 'Messages',      path: '/messages' },
