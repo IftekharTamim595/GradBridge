@@ -211,6 +211,8 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Social Auth Settings
+SOCIALACCOUNT_STORE_TOKENS = False
+SOCIALACCOUNT_ADAPTER = 'allauth.socialaccount.adapter.DefaultSocialAccountAdapter'
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': [

@@ -23,6 +23,15 @@ class GoogleLogin(SocialLoginView):
         Override to customize response after successful authentication.
         At this point, self.user is set and authenticated.
         """
+        # Get user from self (set by parent class self.login())
+        user = getattr(self, 'user', None)
+        
+        if not user or user.is_anonymous:
+            return Response(
+                {'error': 'Authentication failed or user not found.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
         # Get login_type from original request data
         login_type = self.request.data.get('login_type', 'student')
         

@@ -3,7 +3,7 @@ services:
     name: gradbridge-backend
     env: python
     plan: free
-    buildCommand: "pip install -r requirements.txt"
+    buildCommand: "./build.sh"
     startCommand: "gunicorn gradbridge.wsgi:application"
     envVars:
       - key: PYTHON_VERSION
