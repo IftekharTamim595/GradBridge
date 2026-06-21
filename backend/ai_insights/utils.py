@@ -1,17 +1,6 @@
-try:
-    import spacy
-except ImportError:
-    spacy = None
 import pdfplumber
 import re
 from collections import Counter
-
-# Load spaCy model
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    print("Warning: spaCy model 'en_core_web_sm' not found. Run 'python -m spacy download en_core_web_sm'")
-    nlp = None
 
 ROLE_SKILLS = {
     "backend": ["python", "django", "rest", "api", "postgresql", "docker", "auth", "sql", "git", "linux", "aws", "redis", "celery", "fastapi", "flask", "java", "c++", "c#", "node.js", "express", "go", "microservices", "mongodb", "mysql", "grpc", "graphql"],
@@ -47,14 +36,38 @@ class ResumeParser:
         return text.strip()
 
 class SkillExtractor:
+    _nlp = None
+    _nlp_loaded = False
+
+    @classmethod
+    def get_nlp(cls):
+        if cls._nlp_loaded:
+            return cls._nlp
+        
+        cls._nlp_loaded = True
+        try:
+            import spacy
+            cls._nlp = spacy.load("en_core_web_sm")
+        except Exception as e:
+            print(f"Warning: spaCy or en_core_web_sm not available. Fallback to basic text matching. Details: {e}")
+            cls._nlp = None
+            
+        return cls._nlp
+
     @staticmethod
     def extract_skills(text):
-        """Extracts skills from text using spaCy and sets."""
-        if not nlp or not text:
+        """Extracts skills from text. Uses spaCy if available, otherwise falls back to exact matching."""
+        if not text:
             return []
         
-        doc = nlp(text.lower())
-        tokens = [token.text for token in doc if not token.is_stop and not token.is_punct]
+        nlp_model = SkillExtractor.get_nlp()
+        
+        if nlp_model:
+            try:
+                doc = nlp_model(text.lower())
+                tokens = [token.text for token in doc if not token.is_stop and not token.is_punct]
+            except Exception:
+                pass
         
         # Also handle multi-word skills (like "machine learning") - simplistic approach check logical subsets
         # For this prototype, we'll primarily rely on token matching against our comprehensive lists
