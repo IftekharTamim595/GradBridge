@@ -1,4 +1,7 @@
-import spacy
+try:
+    import spacy
+except ImportError:
+    spacy = None
 import pdfplumber
 import re
 from collections import Counter
