@@ -1,26 +1,42 @@
-channels==4.3.2
-channels_redis==4.3.0
-daphne==4.2.1
-dj-database-url==3.1.2
-dj-rest-auth==5.0.2
-django-allauth==0.58.2
+# Core Django stack
+Django==4.2.7
+gunicorn==21.2.0
+whitenoise==6.6.0
+
+# Database
+psycopg2-binary==2.9.9
+dj-database-url==2.1.0
+
+# API layer
+djangorestframework==3.14.0
 django-cors-headers==4.3.1
 django-filter==23.4
-django-jazzmin==2.6.0
-Django==4.2.7
+
+# Auth
+dj-rest-auth==5.0.2
+django-allauth==0.58.2
 djangorestframework-simplejwt==5.3.0
-djangorestframework==3.14.0
-en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl#sha256=86cc141f63942d4b2c5fcee06630fd6f904788d2f0ab005cce45aadb8fb73889
-Faker==40.1.2
-gunicorn==25.0.3
-numpy==1.26.4
-pdfplumber==0.10.3
-Pillow==10.3.0
-psycopg2-binary==2.9.9
-PyPDF2==3.0.1
+
+# Channels (ONLY if you actually use websockets)
+channels==4.0.0
+channels-redis==4.1.0
+daphne==4.0.0
+redis==5.0.1
+
+# Utilities
 python-decouple==3.8
 python-dotenv==1.0.0
-redis==7.1.0
-requests==2.32.5
-scikit-learn==1.8.0
-whitenoise==6.11.0
+requests==2.31.0
+Faker==25.9.1
+Pillow==10.3.0
+
+# Data / ML (SAFE minimal set)
+numpy==1.26.4
+scikit-learn==1.3.2
+
+# PDF tools
+pdfplumber==0.10.3
+PyPDF2==3.0.1
+
+# Optional admin UI
+django-jazzmin==2.6.0
