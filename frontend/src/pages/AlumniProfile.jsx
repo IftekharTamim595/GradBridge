@@ -14,7 +14,7 @@ const AlumniProfile = () => {
   const [skills, setSkills] = useState([])
 
   const { showModal } = useModal()
-  const { user, loading: authLoading, isAuthenticated } = useAuth()
+  const { user, loading: authLoading, isAuthenticated, updateUser } = useAuth()
 
   const getErrorMessage = (error) => {
     if (error.response?.data) {
@@ -115,6 +115,12 @@ const AlumniProfile = () => {
         await apiClient.patch(`/profiles/alumni/me/`, data)
       } else {
         await apiClient.patch('/profiles/alumni/me/', data)
+      }
+
+      const newRole = formData.get('role')
+      if (newRole && newRole !== user?.role) {
+        await apiClient.patch('/auth/me/', { role: newRole })
+        updateUser({ role: newRole })
       }
 
       await fetchData()
@@ -394,15 +400,27 @@ const AlumniProfile = () => {
                 <Globe className="text-brand-primary" size={20} />
                 <span>Profile Settings</span>
               </h2>
-              <div>
-                <label className="block text-sm font-medium text-brand-textSecondary mb-2">Profile Visibility</label>
-                <select name="visibility" defaultValue={profile?.visibility || 'public'} className="input-field">
-                  <option value="public">Visible to everyone (Recommended)</option>
-                  <option value="private">Private (Only you and admins)</option>
-                </select>
-                <p className="text-xs text-brand-textMuted mt-2">
-                  If set to Private, students will not be able to find your profile or request mentorship/referrals.
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-brand-textSecondary mb-2">Profile Visibility</label>
+                  <select name="visibility" defaultValue={profile?.visibility || 'public'} className="input-field">
+                    <option value="public">Visible to everyone (Recommended)</option>
+                    <option value="private">Private (Only you and admins)</option>
+                  </select>
+                  <p className="text-xs text-brand-textMuted mt-2">
+                    If set to Private, students will not be able to find your profile or request mentorship/referrals.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-brand-textSecondary mb-2">Account Role</label>
+                  <select name="role" defaultValue={user?.role || 'alumni'} className="input-field">
+                    <option value="alumni">Alumni</option>
+                    <option value="student">Student</option>
+                  </select>
+                  <p className="text-xs text-brand-textMuted mt-2">
+                    Changing this will update your account type and dashboard access.
+                  </p>
+                </div>
               </div>
             </div>
 

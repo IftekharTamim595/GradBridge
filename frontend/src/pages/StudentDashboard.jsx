@@ -28,7 +28,7 @@ const StudentDashboard = () => {
   const showStrengthBreakdown = async () => {
     try {
       showModal({ type: 'info', message: 'Loading score data...' });
-      const res = await apiClient.get('/profiles/students/me/score/');
+      const res = await apiClient.get('/profile/score/');
       const scoreData = res.data;
       
       const totalScore = scoreData.total_score || 0;

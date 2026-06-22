@@ -15,7 +15,7 @@ const StudentProfile = () => {
   const [saving, setSaving] = useState(false)
 
   const { showModal } = useModal()
-  const { user, loading: authLoading, isAuthenticated } = useAuth()
+  const { user, loading: authLoading, isAuthenticated, updateUser } = useAuth()
 
   const getErrorMessage = (error) => {
     if (error.response?.data) {
@@ -123,6 +123,13 @@ const StudentProfile = () => {
       }
 
       await apiClient.patch('/profiles/students/me/', data)
+
+      const newRole = formData.get('role')
+      if (newRole && newRole !== user?.role) {
+        await apiClient.patch('/auth/me/', { role: newRole })
+        updateUser({ role: newRole })
+      }
+
       await fetchData()
       showModal({ type: 'success', message: 'Profile updated successfully!' })
     } catch (error) {
@@ -389,12 +396,21 @@ const StudentProfile = () => {
           <div className="card shadow-lg">
             <h3 className="text-lg font-heading text-slate-800 mb-6">Career Settings</h3>
             <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Profile Visibility</label>
-                <select name="visibility" defaultValue={profile?.visibility || 'public'} className="input-field">
-                  <option value="public">Visible to everyone (Recommended)</option>
-                  <option value="private">Private (Only you and admins)</option>
-                </select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Profile Visibility</label>
+                  <select name="visibility" defaultValue={profile?.visibility || 'public'} className="input-field">
+                    <option value="public">Visible to everyone (Recommended)</option>
+                    <option value="private">Private (Only you and admins)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Account Role</label>
+                  <select name="role" defaultValue={user?.role || 'student'} className="input-field">
+                    <option value="student">Student</option>
+                    <option value="alumni">Alumni</option>
+                  </select>
+                </div>
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">

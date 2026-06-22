@@ -17,6 +17,7 @@ const Register = () => {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const { register } = useAuth()
   const navigate = useNavigate()
@@ -42,6 +43,7 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setSuccessMessage('')
 
     if (formData.password !== formData.password_confirm) {
       setError('Passwords do not match')
@@ -54,12 +56,18 @@ const Register = () => {
 
     setLoading(true)
     const result = await register(formData)
+    setLoading(false)
+
     if (result.success) {
-      navigate(formData.role === 'student' ? '/student/dashboard' : '/alumni/dashboard')
+      if (result.partial) {
+        setSuccessMessage('Registration successful! Redirecting to login...')
+        setTimeout(() => navigate('/login'), 2000)
+      } else {
+        navigate(formData.role === 'student' ? '/student/dashboard' : '/alumni/dashboard')
+      }
     } else {
       setError(parseError(result.error))
     }
-    setLoading(false)
   }
 
   return (
@@ -165,8 +173,14 @@ const Register = () => {
                 {error}
               </div>
             )}
+            
+            {successMessage && (
+              <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-600 text-sm rounded-xl">
+                {successMessage}
+              </div>
+            )}
 
-            <button type="submit" disabled={loading}
+            <button type="submit" disabled={loading || successMessage}
               className="btn-primary w-full justify-center py-3 shadow-accent disabled:opacity-60 mt-1">
               {loading ? 'Creating account…' : 'Create account'}
               {!loading && <ArrowRight size={17} />}

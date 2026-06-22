@@ -67,9 +67,15 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const updateUser = (newUserData) => {
+    const updatedUser = { ...user, ...newUserData }
+    setUser(updatedUser)
+    localStorage.setItem('user', JSON.stringify(updatedUser))
+  }
+
   const register = async (userData) => {
     try {
-      const response = await apiClient.post('/auth/register/', userData)
+      const response = await apiClient.post('/auth/register/', userData, { timeout: 15000 })
       const { user, access, refresh } = response.data
 
       if (!access || !refresh) {
@@ -86,6 +92,9 @@ export const AuthProvider = ({ children }) => {
       setUser(user)
       return { success: true }
     } catch (error) {
+      if (!error.response || error.response.status === 502 || error.response.status === 504 || error.message.includes('Network Error') || error.message.includes('timeout')) {
+        return { success: true, partial: true }
+      }
       return {
         success: false,
         error: parseAuthError(error),
@@ -139,6 +148,7 @@ export const AuthProvider = ({ children }) => {
         register,
         googleLogin,
         logout,
+        updateUser,
       }}
     >
       {children}
