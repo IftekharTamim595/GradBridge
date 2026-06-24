@@ -83,20 +83,29 @@ ASGI_APPLICATION = 'config.asgi.application'
 
 # Channels Configuration
 import logging
-logger = logging.getLogger(__name__)
+_channels_logger = logging.getLogger(__name__)
 
 REDIS_URL = os.environ.get("REDIS_URL")
-if not REDIS_URL:
-    logger.error("CRITICAL: REDIS_URL environment variable is missing! WebSockets and Channels will fail.")
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [REDIS_URL] if REDIS_URL else [],
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+            },
         },
-    },
-}
+    }
+else:
+    _channels_logger.warning(
+        "REDIS_URL is not set. Using InMemoryChannelLayer (local dev only — "
+        "will NOT work across multiple processes)."
+    )
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
