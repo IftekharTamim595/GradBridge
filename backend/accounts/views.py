@@ -11,11 +11,13 @@ from django.contrib.auth import authenticate
 from .serializers import UserRegistrationSerializer, UserSerializer, LoginSerializer
 from .models import User
 from utils.email_service import send_email
+from django.db import transaction
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @throttle_classes([ScopedRateThrottle])
+@transaction.atomic
 def register(request):
     request.throttle_scope = 'burst'
     """
@@ -25,10 +27,13 @@ def register(request):
     if serializer.is_valid():
         user = serializer.save()
         
-        # Send welcome email
+        # Send welcome email only after transaction commits
         subject = "Welcome to GradBridge!"
         message = f"Hello {user.first_name or user.email},\n\nWelcome to GradBridge! Your account has been successfully created. We're excited to have you on board."
-        send_email(user.email, subject, message)
+        
+        transaction.on_commit(
+            lambda: send_email(user.email, subject, message)
+        )
         
         refresh = RefreshToken.for_user(user)
         return Response({

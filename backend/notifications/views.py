@@ -1,6 +1,6 @@
 from rest_framework import viewsets, permissions, serializers, status
 from rest_framework.views import APIView
-from django.core.mail import send_mail
+from utils.email_service import send_email
 from django.conf import settings
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -43,14 +43,10 @@ class ReportProblemView(APIView):
         
         full_message = f"User ({user_email}) reported a problem:\n\n{message}"
         
-        try:
-            send_mail(
-                subject='gradbridge user comment/something else',
-                message=full_message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=['tamimbhuiyan890@gmail.com'],
-                fail_silently=False,
-            )
-            return Response({'status': 'success'}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Send asynchronously/safely without failing the request
+        send_email(
+            to_email='tamimbhuiyan890@gmail.com',
+            subject='gradbridge user comment/something else',
+            message=full_message
+        )
+        return Response({'status': 'success'}, status=status.HTTP_200_OK)

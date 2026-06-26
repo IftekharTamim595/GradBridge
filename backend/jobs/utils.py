@@ -3,7 +3,7 @@ import json
 from django.conf import settings
 from profiles.models import StudentProfile
 from .models import Job
-
+import os
 def get_job_recommendations(student_profile):
     """
     Use OpenRouter to find the best matching jobs for a student.
