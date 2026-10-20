@@ -1,7 +1,7 @@
 # GradBridge
 
 **Connecting Students and Alumni for Mentorship, Career Growth, and Collaboration**
-
+**Live link : https://gradbridge-1.netlify.app/ **
 GradBridge is a modern web platform that bridges the gap between university students and alumni, fostering meaningful connections for mentorship, job referrals, networking, and career development.
 
 ---
